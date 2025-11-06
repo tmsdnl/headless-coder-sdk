@@ -8,7 +8,7 @@
     "src"
   ],
   "scripts": {
-    "test": "npm exec -- tsx --test src/codex-web-calculator.test.ts"
+    "test": "npm exec -- tsx --test \"src/**/*.test.ts\""
   },
   "dependencies": {
     "@headless-coders/core": "file:../packages/core",
