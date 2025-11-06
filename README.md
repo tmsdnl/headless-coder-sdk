@@ -1,4 +1,4 @@
-# Headless Coders Monorepo
+# Headless Coders
 
 This workspace hosts the shared headless coder abstraction together with provider-specific adapters.
 
@@ -28,4 +28,3 @@ console.log(result.text);
   - or `pnpm install`
 - Run workspace builds: `npm run build` or `pnpm run build`
 - Execute tests across packages: `npm run test` or `pnpm run test`
-
