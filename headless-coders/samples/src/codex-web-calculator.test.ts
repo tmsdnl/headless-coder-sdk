@@ -94,9 +94,17 @@ async function runCalculatorScenario(t: TestContext): Promise<void> {
   });
 
   const thread = await coder.startThread();
-  t.teardown(async () => {
+  const cleanup = async () => {
     await coder.close?.(thread);
-  });
+  };
+  const maybeCleanup = (t as { cleanup?: (fn: () => Promise<void> | void) => void }).cleanup;
+  if (typeof maybeCleanup === 'function') {
+    maybeCleanup(cleanup);
+  } else {
+    t.signal.addEventListener('abort', () => {
+      void cleanup();
+    });
+  }
 
   const prompt = buildCalculatorPrompt(TARGET_DIR);
 
@@ -111,7 +119,10 @@ async function runCalculatorScenario(t: TestContext): Promise<void> {
 
   const htmlPath = path.join(TARGET_DIR, 'index.html');
   const html = await readFile(htmlPath, 'utf8');
-  assert.ok(html.includes('calculator'), 'Generated HTML should reference a calculator UI.');
+  assert.ok(
+    html.toLowerCase().includes('calculator'),
+    'Generated HTML should reference a calculator UI.',
+  );
 
   const dom = new JSDOM(html, { runScripts: 'dangerously' });
   const { window } = dom;
@@ -141,4 +152,3 @@ async function runCalculatorScenario(t: TestContext): Promise<void> {
 }
 
 test('codex generates a runnable web calculator', runCalculatorScenario);
-

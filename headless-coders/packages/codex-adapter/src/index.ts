@@ -43,9 +43,10 @@ export class CodexAdapter implements HeadlessCoder {
    *   defaultOpts: Options applied to every thread operation unless overridden.
    */
   constructor(private readonly defaultOpts?: StartOpts) {
-    this.client = new Codex({
-      executablePath: this.defaultOpts?.codexExecutablePath,
-    });
+    const config = this.defaultOpts?.codexExecutablePath
+      ? { executablePath: this.defaultOpts.codexExecutablePath }
+      : {};
+    this.client = new Codex(config as any);
   }
 
   /**
@@ -65,7 +66,7 @@ export class CodexAdapter implements HeadlessCoder {
       skipGitRepoCheck: options.skipGitRepoCheck,
       workingDirectory: options.workingDirectory,
     });
-    return { provider: 'codex', internal: thread, id: (thread as any).id };
+    return { provider: 'codex', internal: thread, id: (thread as any).id ?? undefined };
   }
 
   /**
@@ -86,7 +87,7 @@ export class CodexAdapter implements HeadlessCoder {
       skipGitRepoCheck: options.skipGitRepoCheck,
       workingDirectory: options.workingDirectory,
     });
-    return { provider: 'codex', internal: thread, id: threadId };
+    return { provider: 'codex', internal: thread, id: threadId ?? undefined };
   }
 
   /**
@@ -107,7 +108,7 @@ export class CodexAdapter implements HeadlessCoder {
     const result = await (thread.internal as CodexThread).run(normalizeInput(input), {
       outputSchema: opts?.outputSchema,
     });
-    const threadId = (thread.internal as CodexThread).id;
+    const threadId = (thread.internal as CodexThread).id ?? undefined;
     const finalResponse = (result as any)?.finalResponse ?? (result as any)?.text ?? result;
     const structured = (result as any)?.parsedResponse ?? (result as any)?.json;
     return {
@@ -138,9 +139,15 @@ export class CodexAdapter implements HeadlessCoder {
     opts?: RunOpts,
   ): AsyncIterable<StreamEvent> {
     void opts;
-    const runStream = (thread.internal as CodexThread).runStreamed(normalizeInput(input));
-    yield { type: 'init', provider: 'codex', threadId: (thread.internal as CodexThread).id };
-    for await (const event of runStream as AsyncIterable<any>) {
+    const runStream = (await (thread.internal as CodexThread).runStreamed(
+      normalizeInput(input),
+    )) as unknown as AsyncIterable<any>;
+    yield {
+      type: 'init',
+      provider: 'codex',
+      threadId: (thread.internal as CodexThread).id ?? undefined,
+    };
+    for await (const event of runStream) {
       yield { type: 'progress', raw: event };
     }
     yield { type: 'done' };
@@ -156,6 +163,7 @@ export class CodexAdapter implements HeadlessCoder {
    *   Thread identifier when available.
    */
   getThreadId(thread: ThreadHandle): string | undefined {
-    return (thread.internal as CodexThread).id;
+    const threadId = (thread.internal as CodexThread).id;
+    return threadId === null ? undefined : threadId;
   }
 }

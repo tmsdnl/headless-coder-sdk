@@ -3,14 +3,12 @@
   "private": true,
   "version": "0.1.0",
   "type": "module",
-  "main": "dist/codex-web-calculator.test.js",
-  "types": "dist/codex-web-calculator.test.d.ts",
+  "main": "src/codex-web-calculator.test.ts",
   "files": [
-    "dist"
+    "src"
   ],
   "scripts": {
-    "build": "tsc -p tsconfig.build.json",
-    "test": "pnpm run build && node --test dist/codex-web-calculator.test.js"
+    "test": "tsx --test src/codex-web-calculator.test.ts"
   },
   "dependencies": {
     "@headless-coders/core": "workspace:*",
@@ -18,7 +16,7 @@
   },
   "devDependencies": {
     "@types/jsdom": "^21.1.7",
+    "tsx": "^4.19.1",
     "typescript": "^5.4.0"
   }
 }
-
