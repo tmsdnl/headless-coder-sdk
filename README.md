@@ -14,8 +14,9 @@ This workspace hosts the shared headless coder abstraction together with provide
 
 ```ts
 import { createCoder } from '@headless-coders/core/factory';
+import { CODER_TYPES } from '@headless-coders/core';
 
-const coder = createCoder('codex', { workingDirectory: process.cwd() });
+const coder = createCoder(CODER_TYPES.CODEX, { workingDirectory: process.cwd() });
 const thread = await coder.startThread();
 const result = await coder.run(thread, 'Generate a test plan for the API gateway.');
 console.log(result.text);

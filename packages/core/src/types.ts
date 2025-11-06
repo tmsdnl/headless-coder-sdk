@@ -3,9 +3,23 @@
  */
 
 /**
+ * Canonical identifiers for the supported headless coder providers.
+ */
+export const CODER_TYPES = {
+  CODEX: 'codex',
+  CLAUDE_CODE: 'claude',
+  GEMINI: 'gemini',
+} as const;
+
+/**
  * Provider discriminant used for selecting a headless coder implementation.
  */
-export type Provider = 'codex' | 'claude' | 'gemini';
+export type Provider = (typeof CODER_TYPES)[keyof typeof CODER_TYPES];
+
+/**
+ * Alias exposed for developer ergonomics when referring to provider identifiers.
+ */
+export type CoderType = Provider;
 
 /**
  * Input accepted by coders when executing a run.

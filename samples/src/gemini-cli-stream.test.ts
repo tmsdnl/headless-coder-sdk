@@ -10,6 +10,7 @@ import path from 'node:path';
 import process from 'node:process';
 import { JSDOM } from 'jsdom';
 import { createCoder } from '@headless-coders/core/factory';
+import { CODER_TYPES } from '@headless-coders/core';
 import type { PromptInput } from '@headless-coders/core/types';
 
 const WORKSPACE = process.env.GEMINI_STREAM_WORKSPACE ?? '/tmp/headless-coder/test_gemini_stream';
@@ -51,7 +52,7 @@ test('gemini streams a sin/cos calculator', async t => {
   await rm(path.join(WORKSPACE, STREAM_FILE), { force: true });
   await mkdir(WORKSPACE, { recursive: true });
 
-  const coder = createCoder('gemini', {
+  const coder = createCoder(CODER_TYPES.GEMINI, {
     workingDirectory: WORKSPACE,
     includeDirectories: [WORKSPACE],
     yolo: true,

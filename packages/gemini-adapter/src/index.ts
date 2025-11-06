@@ -14,6 +14,9 @@ import type {
   StreamEvent,
 } from '@headless-coders/core';
 
+const STRUCTURED_OUTPUT_SUFFIX =
+  'Respond with JSON that matches the provided schema. Do not include explanatory text outside the JSON.';
+
 /**
  * Resolves the Gemini binary path, honoring user overrides.
  *
@@ -39,6 +42,30 @@ function geminiPath(override?: string): string {
 function toPrompt(input: PromptInput): string {
   if (typeof input === 'string') return input;
   return input.map(message => `${message.role}: ${message.content}`).join('\n');
+}
+
+function applyOutputSchemaPrompt(input: PromptInput, schema?: object): string {
+  if (!schema) return toPrompt(input);
+  const schemaText = JSON.stringify(schema, null, 2);
+  const instruction = `${STRUCTURED_OUTPUT_SUFFIX}\nSchema:\n${schemaText}`;
+  if (typeof input === 'string') {
+    return `${input}\n\n${instruction}`;
+  }
+  return toPrompt([{ role: 'system', content: instruction }, ...input]);
+}
+
+function extractJsonPayload(text: string | undefined): unknown | undefined {
+  if (!text) return undefined;
+  const fenced = text.match(/```json\s*([\s\S]+?)```/i);
+  const candidate = (fenced ? fenced[1] : text).trim();
+  const start = candidate.indexOf('{');
+  const end = candidate.lastIndexOf('}');
+  if (start === -1 || end === -1 || end < start) return undefined;
+  try {
+    return JSON.parse(candidate.slice(start, end + 1));
+  } catch {
+    return undefined;
+  }
 }
 
 /**
@@ -101,7 +128,8 @@ export class GeminiAdapter implements HeadlessCoder {
    */
   async run(thread: ThreadHandle, input: PromptInput, opts?: RunOpts): Promise<RunResult> {
     const startOpts = ((thread.internal as any)?.opts ?? {}) as StartOpts;
-    const args = ['--output-format', 'json', '--prompt', toPrompt(input)];
+    const prompt = applyOutputSchemaPrompt(input, opts?.outputSchema);
+    const args = ['--output-format', 'json', '--prompt', prompt];
     if (startOpts.model) args.push('--model', startOpts.model);
     if (startOpts.includeDirectories?.length) {
       args.push('--include-directories', startOpts.includeDirectories.join(','));
@@ -135,10 +163,12 @@ export class GeminiAdapter implements HeadlessCoder {
       parsed = { response: stdout };
     }
 
+    const text = parsed.response ?? parsed.text ?? stdout;
+    const structured = opts?.outputSchema ? extractJsonPayload(text) : undefined;
     return {
       threadId: parsed.session_id ?? thread.id,
-      text: parsed.response ?? parsed.text ?? stdout,
-      json: parsed.json,
+      text,
+      json: structured ?? parsed.json,
       usage: parsed.stats,
       raw: parsed,
     };
@@ -164,7 +194,8 @@ export class GeminiAdapter implements HeadlessCoder {
     opts?: RunOpts,
   ): AsyncIterable<StreamEvent> {
     const startOpts = ((thread.internal as any)?.opts ?? {}) as StartOpts;
-    const args = ['--output-format', 'stream-json', '--prompt', toPrompt(input)];
+    const prompt = applyOutputSchemaPrompt(input, opts?.outputSchema);
+    const args = ['--output-format', 'stream-json', '--prompt', prompt];
     if (startOpts.model) args.push('--model', startOpts.model);
     if (startOpts.includeDirectories?.length) {
       args.push('--include-directories', startOpts.includeDirectories.join(','));

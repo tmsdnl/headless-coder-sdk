@@ -11,6 +11,7 @@ import path from 'node:path';
 import process from 'node:process';
 import { JSDOM } from 'jsdom';
 import { createCoder } from '@headless-coders/core/factory';
+import { CODER_TYPES } from '@headless-coders/core';
 import type { PromptInput, RunResult } from '@headless-coders/core/types';
 
 const GEMINI_WORKSPACE = process.env.GEMINI_TEST_WORKSPACE ?? '/tmp/headless-coder/test_gemini';
@@ -78,7 +79,7 @@ function isGeminiMissing(error: unknown): boolean {
 async function runGeminiScenario(t: TestContext): Promise<void> {
   await prepareWorkspace(GEMINI_WORKSPACE);
 
-  const coder = createCoder('gemini', {
+  const coder = createCoder(CODER_TYPES.GEMINI, {
     workingDirectory: GEMINI_WORKSPACE,
     includeDirectories: [GEMINI_WORKSPACE],
     yolo: true,
@@ -143,4 +144,3 @@ async function runGeminiScenario(t: TestContext): Promise<void> {
 }
 
 test('gemini generates a runnable web calculator', runGeminiScenario);
-

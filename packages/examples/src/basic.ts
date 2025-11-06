@@ -5,9 +5,10 @@
 import { fileURLToPath } from 'node:url';
 import process from 'node:process';
 import { createCoder } from '@headless-coders/core/factory';
+import { CODER_TYPES } from '@headless-coders/core';
 import type { Provider, PromptInput } from '@headless-coders/core/types';
 
-const SUPPORTED_PROVIDERS: Provider[] = ['codex', 'claude', 'gemini'];
+const SUPPORTED_PROVIDERS: Provider[] = Object.values(CODER_TYPES);
 
 /**
  * Parses CLI arguments into a provider and prompt payload.
@@ -22,7 +23,7 @@ function parseArgs(argv: string[]): [Provider, PromptInput] {
   const [providerMaybe, ...promptParts] = argv;
   const provider = SUPPORTED_PROVIDERS.includes(providerMaybe as Provider)
     ? (providerMaybe as Provider)
-    : 'codex';
+    : CODER_TYPES.CODEX;
   const prompt =
     promptParts.join(' ').trim() ||
     'Summarise the shared headless coder abstraction in three bullet points.';

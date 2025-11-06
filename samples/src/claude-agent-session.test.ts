@@ -12,6 +12,7 @@ import path from 'node:path';
 import process from 'node:process';
 import { JSDOM } from 'jsdom';
 import { createCoder } from '@headless-coders/core/factory';
+import { CODER_TYPES } from '@headless-coders/core';
 import type { PromptInput, RunResult } from '@headless-coders/core/types';
 
 const CLAUDE_WORKSPACE = process.env.CLAUDE_TEST_WORKSPACE ?? '/tmp/headless-coder/test_claude';
@@ -169,7 +170,7 @@ async function runClaudeScenario(t: TestContext): Promise<void> {
     return;
   }
 
-  const coder = createCoder('claude', {
+  const coder = createCoder(CODER_TYPES.CLAUDE_CODE, {
     workingDirectory: CLAUDE_WORKSPACE,
     model: process.env.CLAUDE_TEST_MODEL,
     allowedTools: ['Write', 'Edit', 'Read', 'NotebookEdit'],

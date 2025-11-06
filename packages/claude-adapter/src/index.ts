@@ -14,6 +14,36 @@ import type {
   StreamEvent,
 } from '@headless-coders/core';
 
+const STRUCTURED_OUTPUT_SUFFIX =
+  'You must respond with valid JSON that satisfies the provided schema. Do not include prose before or after the JSON.';
+
+function applyOutputSchemaPrompt(input: PromptInput, schema?: object): PromptInput {
+  if (!schema) return input;
+  const schemaSnippet = JSON.stringify(schema, null, 2);
+  const systemPrompt = `${STRUCTURED_OUTPUT_SUFFIX}\nSchema:\n${schemaSnippet}`;
+  if (typeof input === 'string') {
+    return `${input}\n\n${systemPrompt}`;
+  }
+  return [
+    { role: 'system', content: systemPrompt },
+    ...input,
+  ];
+}
+
+function extractJsonPayload(text: string | undefined): unknown | undefined {
+  if (!text) return undefined;
+  const fenced = text.match(/```json\s*([\s\S]+?)```/i);
+  const candidate = (fenced ? fenced[1] : text).trim();
+  const start = candidate.indexOf('{');
+  const end = candidate.lastIndexOf('}');
+  if (start === -1 || end === -1 || end < start) return undefined;
+  try {
+    return JSON.parse(candidate.slice(start, end + 1));
+  } catch {
+    return undefined;
+  }
+}
+
 /**
  * Normalises prompt input into Claude's string format.
  *
@@ -121,8 +151,9 @@ export class ClaudeAdapter implements HeadlessCoder {
    *   Error: Propagated when the Claude Agent SDK surfaces a failure event.
    */
   async run(thread: ThreadHandle, input: PromptInput, runOpts?: RunOpts): Promise<RunResult> {
+    const structuredPrompt = applyOutputSchemaPrompt(toPrompt(input), runOpts?.outputSchema);
     const options = this.buildOptions(thread, runOpts);
-    const generator = query({ prompt: toPrompt(input), options });
+    const generator = query({ prompt: structuredPrompt, options });
     let lastAssistant = '';
     let finalResult: any;
     try {
@@ -148,7 +179,8 @@ export class ClaudeAdapter implements HeadlessCoder {
     if (finalResult && this.resultIndicatesError(finalResult)) {
       throw new Error(this.buildResultErrorMessage(finalResult));
     }
-    return { threadId: thread.id, text: lastAssistant, raw: finalResult };
+    const structured = runOpts?.outputSchema ? extractJsonPayload(lastAssistant) : undefined;
+    return { threadId: thread.id, text: lastAssistant, raw: finalResult, json: structured };
   }
 
   /**
@@ -171,8 +203,9 @@ export class ClaudeAdapter implements HeadlessCoder {
     runOpts?: RunOpts,
   ): AsyncIterable<StreamEvent> {
     yield { type: 'init', provider: 'claude', threadId: thread.id };
+    const structuredPrompt = applyOutputSchemaPrompt(toPrompt(input), runOpts?.outputSchema);
     const options = this.buildOptions(thread, runOpts);
-    const generator = query({ prompt: toPrompt(input), options });
+    const generator = query({ prompt: structuredPrompt, options });
     for await (const message of generator as AsyncGenerator<SDKMessage, void, void>) {
       const type = (message as any)?.type?.toLowerCase?.();
       if (!type) {
