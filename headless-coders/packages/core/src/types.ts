@@ -31,6 +31,9 @@ export interface StartOpts {
   geminiBinaryPath?: string;
   includeDirectories?: string[];
   yolo?: boolean;
+  permissionMode?: string;
+  allowDangerouslySkipPermissions?: boolean;
+  permissionPromptToolName?: string;
 }
 
 /**
@@ -99,4 +102,3 @@ export interface HeadlessCoder {
   getThreadId(thread: ThreadHandle): string | undefined;
   close?(thread: ThreadHandle): Promise<void>;
 }
-

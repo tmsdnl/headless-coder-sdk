@@ -101,6 +101,9 @@ export class ClaudeAdapter implements HeadlessCoder {
       forkSession: startOpts.forkSession,
       includePartialMessages: !!runOpts?.streamPartialMessages,
       model: startOpts.model,
+      permissionMode: startOpts.permissionMode,
+      allowDangerouslySkipPermissions: startOpts.allowDangerouslySkipPermissions,
+      permissionPromptToolName: startOpts.permissionPromptToolName,
     };
   }
 

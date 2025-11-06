@@ -1,15 +1,16 @@
 /**
  * @fileoverview Validates Claude Agent SDK integration through the shared headless coder facade.
  *
- * The test sends a lightweight planning prompt and ensures Claude returns a non-empty response.
+ * The test instructs Claude to generate a calculator and verifies the produced page.
  */
 
 import { test, type TestContext } from 'node:test';
 import assert from 'node:assert/strict';
-import { access, mkdir, readFile } from 'node:fs/promises';
+import { access, mkdir, readFile, rm } from 'node:fs/promises';
 import { constants as fsConstants } from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
+import { JSDOM } from 'jsdom';
 import { createCoder } from '@headless-coders/core/factory';
 import type { PromptInput, RunResult } from '@headless-coders/core/types';
 
@@ -91,16 +92,24 @@ async function loadClaudeEnvironment(workspace: string): Promise<void> {
  *   PromptInput requesting a concise validation checklist.
  */
 function buildPrompt(workspace: string): PromptInput {
+  const instructions = [
+    `You are operating inside ${workspace}.`,
+    'Tasks:',
+    '- Overwrite index.html in this directory with a complete, production-ready calculator page.',
+    '- Requirements:',
+    '  * Use semantic HTML; wrap the interface in a main element.',
+    '  * Provide two numeric inputs with ids numberA and numberB, a select with id operator that offers "+", "-", "*", "/", and a button with id compute.',
+    '  * Include a span with id="result" that displays the outcome; it may be wrapped in descriptive text like "Result:".',
+    '  * Define window.calculate(a, b, operator) in inline JavaScript. It must parse numeric inputs, execute the requested operation, update the result span text, and return the numeric result.',
+    '  * Register a click listener on the compute button that prevents default submission, reads the inputs, and calls window.calculate.',
+    '  * Apply modest inline CSS for clarity, avoiding any external assets.',
+    '- Do not create additional files or run shell commands beyond writing index.html.',
+    '- After writing the file, confirm success in a single concise sentence.',
+  ].join('\n');
+
   return [
-    {
-      role: 'system',
-      content: `You are assisting with integration tests located in ${workspace}.`,
-    },
-    {
-      role: 'user',
-      content:
-        'Provide three concise bullet points that describe how to manually verify the generated web calculator works as expected.',
-    },
+    { role: 'system', content: 'You are a meticulous software engineer generating deterministic project files.' },
+    { role: 'user', content: instructions },
   ];
 }
 
@@ -147,6 +156,7 @@ async function withinTimeout<T>(promise: Promise<T>, timeoutMs: number, message:
 async function runClaudeScenario(t: TestContext): Promise<void> {
   await ensureWorkspace(CLAUDE_WORKSPACE);
   await loadClaudeEnvironment(CLAUDE_WORKSPACE);
+  await rm(path.join(CLAUDE_WORKSPACE, 'index.html'), { force: true });
 
   const hasAnthropicKey =
     !!process.env.ANTHROPIC_API_KEY || !!process.env.CLAUDE_API_KEY || !!process.env.ANTHROPIC_API_TOKEN;
@@ -162,6 +172,9 @@ async function runClaudeScenario(t: TestContext): Promise<void> {
   const coder = createCoder('claude', {
     workingDirectory: CLAUDE_WORKSPACE,
     model: process.env.CLAUDE_TEST_MODEL,
+    allowedTools: ['Write', 'Edit', 'Read', 'NotebookEdit'],
+    permissionMode: 'acceptEdits',
+    allowDangerouslySkipPermissions: true,
   });
   const thread = await coder.startThread();
 
@@ -200,6 +213,39 @@ async function runClaudeScenario(t: TestContext): Promise<void> {
       'Claude run should report the same thread identifier that was started.',
     );
   }
+
+  const htmlPath = path.join(CLAUDE_WORKSPACE, 'index.html');
+  const html = await readFile(htmlPath, 'utf8');
+  assert.ok(html.includes('numberA'), 'Generated HTML should include the first input field.');
+
+  const dom = new JSDOM(html, { runScripts: 'dangerously' });
+  const { window } = dom;
+
+  assert.equal(typeof window.calculate, 'function', 'window.calculate must be defined.');
+  const direct = window.calculate(6, 3, '-');
+  assert.equal(direct, 3, 'window.calculate should compute subtraction.');
+
+  const numberA = window.document.getElementById('numberA') as HTMLInputElement | null;
+  const numberB = window.document.getElementById('numberB') as HTMLInputElement | null;
+  const operator = window.document.getElementById('operator') as HTMLSelectElement | null;
+  const compute = window.document.getElementById('compute') as HTMLButtonElement | null;
+  const resultSpan = window.document.getElementById('result');
+
+  assert.ok(numberA && numberB && operator && compute && resultSpan, 'Calculator DOM elements must exist.');
+
+  numberA.value = '10';
+  numberB.value = '2';
+  operator.value = '*';
+  compute.click();
+
+  const claudeRawResult = resultSpan.textContent?.trim() ?? '';
+  const claudeNormalized = claudeRawResult.replace(/^result:\s*/i, '');
+
+  assert.equal(
+    claudeNormalized,
+    '20',
+    'Claude-generated calculator should update the result span with the calculated value.',
+  );
 }
 
 test('claude agent produces a verification plan', runClaudeScenario);
