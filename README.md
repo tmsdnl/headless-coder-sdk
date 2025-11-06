@@ -22,6 +22,56 @@ const result = await coder.run(thread, 'Generate a test plan for the API gateway
 console.log(result.text);
 ```
 
+## Streaming Example (Claude)
+
+```ts
+import { createCoder } from '@headless-coders/core/factory';
+import { CODER_TYPES } from '@headless-coders/core';
+
+const claude = createCoder(CODER_TYPES.CLAUDE_CODE, {
+  workingDirectory: process.cwd(),
+  permissionMode: 'bypassPermissions',
+});
+const thread = await claude.startThread();
+for await (const event of claude.runStreamed(thread, 'Plan end-to-end tests')) {
+  if (event.type === 'message' && event.role === 'assistant') {
+    process.stdout.write(event.delta ? event.text ?? '' : `\n${event.text}\n`);
+  }
+}
+```
+
+## Structured Output Example (Gemini)
+
+```ts
+import { createCoder } from '@headless-coders/core/factory';
+import { CODER_TYPES } from '@headless-coders/core';
+
+const gemini = createCoder(CODER_TYPES.GEMINI, {
+  workingDirectory: process.cwd(),
+  includeDirectories: [process.cwd()],
+});
+
+const turn = await gemini.run(
+  await gemini.startThread(),
+  'Summarise the repo in JSON',
+  {
+    outputSchema: {
+      type: 'object',
+      properties: {
+        summary: { type: 'string' },
+        components: {
+          type: 'array',
+          items: { type: 'string' },
+        },
+      },
+      required: ['summary', 'components'],
+    },
+  },
+);
+
+console.log(turn.json); // Parsed object based on the schema above
+```
+
 ## Development
 
 - Install dependencies with your preferred package manager:
