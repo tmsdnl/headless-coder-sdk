@@ -76,6 +76,7 @@ test('codex streams a sin/cos calculator', async () => {
   const cosSpan = window.document.getElementById('cosResult');
   const button =
     (window.document.getElementById('compute') as HTMLButtonElement | null) ||
+    (window.document.getElementById('computeButton') as HTMLButtonElement | null) ||
     (window.document.getElementById('computeSin') as HTMLButtonElement | null) ||
     (window.document.querySelector('.compute-btn') as HTMLButtonElement | null) ||
     (window.document.querySelector('.compute-button') as HTMLButtonElement | null);
