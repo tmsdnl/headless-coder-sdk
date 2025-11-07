@@ -108,3 +108,4 @@ console.log(followUp.text);
   - or `pnpm install`
 - Run workspace builds: `npm run build` or `pnpm run build`
 - Execute tests across packages: `npm run test` or `pnpm run test`
+- Execute the end-to-end examples suite: `npm run test -- --workspace @headless-coder/examples-tests`

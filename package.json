@@ -5,7 +5,7 @@
   "type": "module",
   "workspaces": [
     "packages/*",
-    "samples"
+    "examples"
   ],
   "scripts": {
     "build": "node ./scripts/run-workspaces.mjs build",

@@ -21,6 +21,15 @@ importers:
         specifier: ^5.4.0
         version: 5.9.3
 
+  examples:
+    dependencies:
+      '@headless-coders/core':
+        specifier: file:../packages/core
+        version: file:packages/core(@anthropic-ai/claude-agent-sdk@0.1.30(zod@3.25.76))(@openai/codex-sdk@0.55.0)
+      jsdom:
+        specifier: ^24.0.0
+        version: 24.1.3
+
   packages/claude-adapter:
     dependencies:
       '@anthropic-ai/claude-agent-sdk':
@@ -28,7 +37,7 @@ importers:
         version: 0.1.30(zod@3.25.76)
       '@headless-coders/core':
         specifier: file:../core
-        version: file:packages/core(@anthropic-ai/claude-agent-sdk@0.1.30(zod@3.25.76))(@openai/codex-sdk@0.55.0)
+        version: link:../core
     devDependencies:
       typescript:
         specifier: ^5.4.0
@@ -51,7 +60,7 @@ importers:
     dependencies:
       '@headless-coders/claude-adapter':
         specifier: file:../claude-adapter
-        version: file:packages/claude-adapter(@anthropic-ai/claude-agent-sdk@0.1.30(zod@3.25.76))(@openai/codex-sdk@0.55.0)
+        version: link:../claude-adapter
       '@headless-coders/codex-adapter':
         specifier: file:../codex-adapter
         version: file:packages/codex-adapter(@anthropic-ai/claude-agent-sdk@0.1.30(zod@3.25.76))(@openai/codex-sdk@0.55.0)
@@ -82,15 +91,6 @@ importers:
       typescript:
         specifier: ^5.4.0
         version: 5.9.3
-
-  samples:
-    dependencies:
-      '@headless-coders/core':
-        specifier: file:../packages/core
-        version: link:../packages/core
-      jsdom:
-        specifier: ^24.0.0
-        version: 24.1.3
 
 packages:
 
