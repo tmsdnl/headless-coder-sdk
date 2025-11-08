@@ -281,11 +281,20 @@ export class ClaudeAdapter implements HeadlessCoder {
           }
         } catch (error) {
           if (isAbortError(error)) {
+            const reason = active.abortReason ?? (error as Error).message ?? 'Interrupted';
             yield {
               type: 'cancelled',
               provider: CODER_NAME,
               ts: now(),
-              originalItem: { reason: active.abortReason ?? 'Interrupted' },
+              originalItem: { reason },
+            };
+            yield {
+              type: 'error',
+              provider: CODER_NAME,
+              code: 'interrupted',
+              message: reason,
+              ts: now(),
+              originalItem: { reason },
             };
             return;
           }

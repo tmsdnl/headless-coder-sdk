@@ -251,12 +251,14 @@ export class GeminiAdapter implements HeadlessCoder {
       if (finished) return;
       finished = true;
       if (active.aborted) {
+        const reason = active.abortReason ?? 'Interrupted';
         push({
           type: 'cancelled',
           provider: CODER_NAME,
           ts: now(),
-          originalItem: { reason: active.abortReason ?? 'Interrupted' },
+          originalItem: { reason },
         });
+        push(interruptedErrorEvent(reason));
         push(DONE);
         return;
       }
@@ -567,4 +569,15 @@ function reasonToString(reason: unknown): string | undefined {
   if (typeof reason === 'string') return reason;
   if (reason instanceof Error && reason.message) return reason.message;
   return undefined;
+}
+
+function interruptedErrorEvent(reason?: string): CoderStreamEvent {
+  return {
+    type: 'error',
+    provider: CODER_NAME,
+    code: 'interrupted',
+    message: reason ?? 'Operation was interrupted',
+    ts: now(),
+    originalItem: { reason },
+  };
 }

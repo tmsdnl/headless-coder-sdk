@@ -340,12 +340,14 @@ export class CodexAdapter implements HeadlessCoder {
           break;
         }
         case 'cancelled': {
+          const reason = raw.reason ?? 'Interrupted';
           push({
             type: 'cancelled',
             provider: CODER_NAME,
             ts: now(),
-            originalItem: { reason: raw.reason ?? 'Interrupted' },
+            originalItem: { reason },
           });
+          push(createInterruptedErrorEvent(reason));
           finished = true;
           push(DONE);
           break;
@@ -369,12 +371,14 @@ export class CodexAdapter implements HeadlessCoder {
       if (finished) return;
       finished = true;
       if (active.aborted) {
+        const reason = active.abortReason ?? 'Interrupted';
         push({
           type: 'cancelled',
           provider: CODER_NAME,
           ts: now(),
-          originalItem: { reason: active.abortReason ?? 'Interrupted' },
+          originalItem: { reason },
         });
+        push(createInterruptedErrorEvent(reason));
         push(DONE);
         return;
       }
@@ -673,6 +677,17 @@ function deserializeError(serialized: SerializedError): Error {
   if (serialized.name) error.name = serialized.name;
   if (serialized.code) (error as any).code = serialized.code;
   return error;
+}
+
+function createInterruptedErrorEvent(reason?: string): CoderStreamEvent {
+  return {
+    type: 'error',
+    provider: CODER_NAME,
+    code: 'interrupted',
+    message: reason ?? 'Operation was interrupted',
+    ts: now(),
+    originalItem: { reason },
+  };
 }
 
 function reasonToString(reason: unknown): string | undefined {
