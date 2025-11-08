@@ -383,20 +383,17 @@ export class CodexAdapter implements HeadlessCoder {
       }
       if (signal) {
         const reason = `Codex worker exited via signal ${signal}`;
-        push(createCancelledEvent(reason, stderrOutput));
         push(createWorkerExitErrorEvent(reason, stderrOutput));
         push(DONE);
         return;
       }
       if (code === 0) {
         const reason = 'Codex worker exited before completing the stream.';
-        push(createCancelledEvent(reason, stderrOutput));
         push(createWorkerExitErrorEvent(reason, stderrOutput));
         push(DONE);
         return;
       }
       const reason = `Codex worker exited with code ${code}`;
-      push(createCancelledEvent(reason, stderrOutput));
       push(createWorkerExitErrorEvent(reason, stderrOutput));
       push(DONE);
     });
