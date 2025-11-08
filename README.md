@@ -1,6 +1,6 @@
 # headless-coder-sdk
 
-This workspace hosts the shared headless-coder-sdk abstraction together with provider-specific adapters.
+Headless Coder SDK is an open-source framework that unifies multiple headless AI-coder SDKs — including the OpenAI Codex SDK, Anthropic Claude Agent SDK, and Google Gemini CLI (headless) — into one consistent developer interface. It standardizes how these SDKs handle threads, streaming, structured outputs, permissions, and sandboxing, allowing developers to work with any AI-coder backend through a single, cohesive API. In short, it’s a unified layer that bridges the fragmented world of headless AI-coding environments.
 
 ## Packages
 
