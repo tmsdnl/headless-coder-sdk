@@ -15,11 +15,11 @@
     "allowSyntheticDefaultImports": true,
     "types": ["node"],
     "paths": {
-      "@headless-coders/core": ["./packages/core/src/index.ts"],
-      "@headless-coders/core/*": ["./packages/core/src/*"],
-      "@headless-coders/codex-adapter": ["./packages/codex-adapter/src/index.ts"],
-      "@headless-coders/claude-adapter": ["./packages/claude-adapter/src/index.ts"],
-      "@headless-coders/gemini-adapter": ["./packages/gemini-adapter/src/index.ts"]
+      "@headless-coder-sdk/core": ["./packages/core/src/index.ts"],
+      "@headless-coder-sdk/core/*": ["./packages/core/src/*"],
+      "@headless-coder-sdk/codex-adapter": ["./packages/codex-adapter/src/index.ts"],
+      "@headless-coder-sdk/claude-adapter": ["./packages/claude-adapter/src/index.ts"],
+      "@headless-coder-sdk/gemini-adapter": ["./packages/gemini-adapter/src/index.ts"]
     }
   }
 }

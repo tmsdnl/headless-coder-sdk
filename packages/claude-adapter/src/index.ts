@@ -1,12 +1,12 @@
 /**
- * @fileoverview Claude Agent SDK adapter implementing the HeadlessCoder interface.
+ * @fileoverview Claude Agent SDK adapter implementing the HeadlessCoderSdk interface.
  */
 
 import { query, type SDKMessage, type Options } from '@anthropic-ai/claude-agent-sdk';
 import { randomUUID } from 'node:crypto';
-import { now } from '@headless-coders/core';
+import { now } from '@headless-coder-sdk/core';
 import type {
-  HeadlessCoder,
+  HeadlessCoderSdk,
   ThreadHandle,
   PromptInput,
   StartOpts,
@@ -15,7 +15,7 @@ import type {
   CoderStreamEvent,
   EventIterator,
   Provider,
-} from '@headless-coders/core';
+} from '@headless-coder-sdk/core';
 
 const STRUCTURED_OUTPUT_SUFFIX =
   'You must respond with valid JSON that satisfies the provided schema. Do not include prose before or after the JSON.';
@@ -62,12 +62,12 @@ function toPrompt(input: PromptInput): string {
 }
 
 /**
- * Adapter bridging Claude Agent SDK into the HeadlessCoder abstraction.
+ * Adapter bridging Claude Agent SDK into the HeadlessCoderSdk abstraction.
  *
  * Args:
  *   defaultOpts: Options applied to every operation when omitted by the caller.
  */
-export class ClaudeAdapter implements HeadlessCoder {
+export class ClaudeAdapter implements HeadlessCoderSdk {
   /**
    * Creates a new Claude adapter instance.
    *

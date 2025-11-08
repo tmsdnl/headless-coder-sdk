@@ -1,5 +1,5 @@
 {
-  "name": "@headless-coder/examples-tests",
+  "name": "@headless-coder-sdk/examples-tests",
   "private": true,
   "version": "0.1.0",
   "type": "module",
@@ -11,7 +11,7 @@
     "test": "npm exec -- tsx --test \"src/**/*.test.ts\""
   },
   "dependencies": {
-    "@headless-coders/core": "file:../packages/core",
+    "@headless-coder-sdk/core": "file:../packages/core",
     "jsdom": "^24.0.0"
   }
 }

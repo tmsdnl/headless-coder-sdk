@@ -1,9 +1,9 @@
 /**
- * @fileoverview Shared type definitions for Headless Coder adapters.
+ * @fileoverview Shared type definitions for headless-coder-sdk adapters.
  */
 
 /**
- * Canonical identifiers for the supported headless coder providers.
+ * Canonical identifiers for the supported headless-coder-sdk providers.
  */
 export const CODER_TYPES = {
   CODEX: 'codex',
@@ -12,7 +12,7 @@ export const CODER_TYPES = {
 } as const;
 
 /**
- * Provider discriminant used for selecting a headless coder implementation.
+ * Provider discriminant used for selecting a headless-coder-sdk implementation.
  */
 export type Provider = 'codex' | 'gemini' | 'claude';
 
@@ -165,9 +165,9 @@ export interface RunResult {
 }
 
 /**
- * Interface implemented by all headless coder adapters.
+ * Interface implemented by all headless-coder-sdk adapters.
  */
-export interface HeadlessCoder {
+export interface HeadlessCoderSdk {
   startThread(opts?: StartOpts): Promise<ThreadHandle>;
   resumeThread(threadId: string, opts?: StartOpts): Promise<ThreadHandle>;
   run(thread: ThreadHandle, input: PromptInput, opts?: RunOpts): Promise<RunResult>;

@@ -1,5 +1,5 @@
 /**
- * @fileoverview Entry point for the Headless Coders core package.
+ * @fileoverview Entry point for the headless-coder-sdk core package.
  */
 
 export * from './types.js';

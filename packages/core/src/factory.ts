@@ -1,20 +1,20 @@
 /**
- * @fileoverview Factory helpers for creating headless coder adapters.
+ * @fileoverview Factory helpers for creating headless-coder-sdk adapters.
  */
 
-import { CodexAdapter } from '@headless-coders/codex-adapter';
-import { ClaudeAdapter } from '@headless-coders/claude-adapter';
-import { GeminiAdapter } from '@headless-coders/gemini-adapter';
-import type { Provider, StartOpts, HeadlessCoder } from './types.js';
+import { CodexAdapter } from '@headless-coder-sdk/codex-adapter';
+import { ClaudeAdapter } from '@headless-coder-sdk/claude-adapter';
+import { GeminiAdapter } from '@headless-coder-sdk/gemini-adapter';
+import type { Provider, StartOpts, HeadlessCoderSdk } from './types.js';
 
 /**
- * Creates a provider-specific headless coder instance.
+ * Creates a provider-specific headless-coder-sdk instance.
  *
  * @param provider Provider identifier.
  * @param defaults Default start options injected into the adapter.
- * @returns Provider-specific `HeadlessCoder` implementation.
+ * @returns Provider-specific `HeadlessCoderSdk` implementation.
  */
-export function createCoder(provider: Provider, defaults?: StartOpts): HeadlessCoder {
+export function createCoder(provider: Provider, defaults?: StartOpts): HeadlessCoderSdk {
   switch (provider) {
     case 'codex':
       return new CodexAdapter(defaults);

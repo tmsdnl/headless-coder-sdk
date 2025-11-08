@@ -1,11 +1,11 @@
 /**
- * @fileoverview Codex adapter that conforms to the HeadlessCoder interface.
+ * @fileoverview Codex adapter that conforms to the HeadlessCoderSdk interface.
  */
 
 import { Codex, type Thread as CodexThread } from '@openai/codex-sdk';
-import { now } from '@headless-coders/core';
+import { now } from '@headless-coder-sdk/core';
 import type {
-  HeadlessCoder,
+  HeadlessCoderSdk,
   ThreadHandle,
   PromptInput,
   StartOpts,
@@ -14,7 +14,7 @@ import type {
   CoderStreamEvent,
   EventIterator,
   Provider,
-} from '@headless-coders/core';
+} from '@headless-coder-sdk/core';
 
 function extractJsonPayload(text: string | undefined): unknown | undefined {
   if (!text) return undefined;
@@ -45,12 +45,12 @@ function normalizeInput(input: PromptInput): string {
 }
 
 /**
- * Adapter that wraps the Codex SDK with the shared HeadlessCoder interface.
+ * Adapter that wraps the Codex SDK with the shared HeadlessCoderSdk interface.
  *
  * Args:
  *   defaultOpts: Options applied to every thread operation unless overridden.
  */
-export class CodexAdapter implements HeadlessCoder {
+export class CodexAdapter implements HeadlessCoderSdk {
   private client: Codex;
 
   /**
@@ -94,7 +94,7 @@ export class CodexAdapter implements HeadlessCoder {
    *   opts: Provider-specific overrides.
    *
    * Returns:
-   *   Thread handle aligned with the HeadlessCoder contract.
+   *   Thread handle aligned with the HeadlessCoderSdk contract.
    */
   async resumeThread(threadId: string, opts?: StartOpts): Promise<ThreadHandle> {
     const options = { ...this.defaultOpts, ...opts };

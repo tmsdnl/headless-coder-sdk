@@ -23,7 +23,7 @@ importers:
 
   examples:
     dependencies:
-      '@headless-coders/core':
+      '@headless-coder-sdk/core':
         specifier: file:../packages/core
         version: file:packages/core(@anthropic-ai/claude-agent-sdk@0.1.30(zod@3.25.76))(@openai/codex-sdk@0.55.0)
       jsdom:
@@ -35,7 +35,7 @@ importers:
       '@anthropic-ai/claude-agent-sdk':
         specifier: '*'
         version: 0.1.30(zod@3.25.76)
-      '@headless-coders/core':
+      '@headless-coder-sdk/core':
         specifier: file:../core
         version: link:../core
     devDependencies:
@@ -45,7 +45,7 @@ importers:
 
   packages/codex-adapter:
     dependencies:
-      '@headless-coders/core':
+      '@headless-coder-sdk/core':
         specifier: file:../core
         version: link:../core
       '@openai/codex-sdk':
@@ -58,13 +58,13 @@ importers:
 
   packages/core:
     dependencies:
-      '@headless-coders/claude-adapter':
+      '@headless-coder-sdk/claude-adapter':
         specifier: file:../claude-adapter
         version: link:../claude-adapter
-      '@headless-coders/codex-adapter':
+      '@headless-coder-sdk/codex-adapter':
         specifier: file:../codex-adapter
         version: file:packages/codex-adapter(@anthropic-ai/claude-agent-sdk@0.1.30(zod@3.25.76))(@openai/codex-sdk@0.55.0)
-      '@headless-coders/gemini-adapter':
+      '@headless-coder-sdk/gemini-adapter':
         specifier: file:../gemini-adapter
         version: link:../gemini-adapter
     devDependencies:
@@ -74,7 +74,7 @@ importers:
 
   packages/examples:
     dependencies:
-      '@headless-coders/core':
+      '@headless-coder-sdk/core':
         specifier: file:../core
         version: link:../core
     devDependencies:
@@ -84,7 +84,7 @@ importers:
 
   packages/gemini-adapter:
     dependencies:
-      '@headless-coders/core':
+      '@headless-coder-sdk/core':
         specifier: file:../core
         version: link:../core
     devDependencies:
@@ -287,20 +287,20 @@ packages:
     cpu: [x64]
     os: [win32]
 
-  '@headless-coders/claude-adapter@file:packages/claude-adapter':
+  '@headless-coder-sdk/claude-adapter@file:packages/claude-adapter':
     resolution: {directory: packages/claude-adapter, type: directory}
     peerDependencies:
       '@anthropic-ai/claude-agent-sdk': '*'
 
-  '@headless-coders/codex-adapter@file:packages/codex-adapter':
+  '@headless-coder-sdk/codex-adapter@file:packages/codex-adapter':
     resolution: {directory: packages/codex-adapter, type: directory}
     peerDependencies:
       '@openai/codex-sdk': '*'
 
-  '@headless-coders/core@file:packages/core':
+  '@headless-coder-sdk/core@file:packages/core':
     resolution: {directory: packages/core, type: directory}
 
-  '@headless-coders/gemini-adapter@file:packages/gemini-adapter':
+  '@headless-coder-sdk/gemini-adapter@file:packages/gemini-adapter':
     resolution: {directory: packages/gemini-adapter, type: directory}
 
   '@img/sharp-darwin-arm64@0.33.5':
@@ -751,32 +751,32 @@ snapshots:
   '@esbuild/win32-x64@0.25.12':
     optional: true
 
-  '@headless-coders/claude-adapter@file:packages/claude-adapter(@anthropic-ai/claude-agent-sdk@0.1.30(zod@3.25.76))(@openai/codex-sdk@0.55.0)':
+  '@headless-coder-sdk/claude-adapter@file:packages/claude-adapter(@anthropic-ai/claude-agent-sdk@0.1.30(zod@3.25.76))(@openai/codex-sdk@0.55.0)':
     dependencies:
       '@anthropic-ai/claude-agent-sdk': 0.1.30(zod@3.25.76)
-      '@headless-coders/core': file:packages/core(@anthropic-ai/claude-agent-sdk@0.1.30(zod@3.25.76))(@openai/codex-sdk@0.55.0)
+      '@headless-coder-sdk/core': file:packages/core(@anthropic-ai/claude-agent-sdk@0.1.30(zod@3.25.76))(@openai/codex-sdk@0.55.0)
     transitivePeerDependencies:
       - '@openai/codex-sdk'
 
-  '@headless-coders/codex-adapter@file:packages/codex-adapter(@anthropic-ai/claude-agent-sdk@0.1.30(zod@3.25.76))(@openai/codex-sdk@0.55.0)':
+  '@headless-coder-sdk/codex-adapter@file:packages/codex-adapter(@anthropic-ai/claude-agent-sdk@0.1.30(zod@3.25.76))(@openai/codex-sdk@0.55.0)':
     dependencies:
-      '@headless-coders/core': file:packages/core(@anthropic-ai/claude-agent-sdk@0.1.30(zod@3.25.76))(@openai/codex-sdk@0.55.0)
+      '@headless-coder-sdk/core': file:packages/core(@anthropic-ai/claude-agent-sdk@0.1.30(zod@3.25.76))(@openai/codex-sdk@0.55.0)
       '@openai/codex-sdk': 0.55.0
     transitivePeerDependencies:
       - '@anthropic-ai/claude-agent-sdk'
 
-  '@headless-coders/core@file:packages/core(@anthropic-ai/claude-agent-sdk@0.1.30(zod@3.25.76))(@openai/codex-sdk@0.55.0)':
+  '@headless-coder-sdk/core@file:packages/core(@anthropic-ai/claude-agent-sdk@0.1.30(zod@3.25.76))(@openai/codex-sdk@0.55.0)':
     dependencies:
-      '@headless-coders/claude-adapter': file:packages/claude-adapter(@anthropic-ai/claude-agent-sdk@0.1.30(zod@3.25.76))(@openai/codex-sdk@0.55.0)
-      '@headless-coders/codex-adapter': file:packages/codex-adapter(@anthropic-ai/claude-agent-sdk@0.1.30(zod@3.25.76))(@openai/codex-sdk@0.55.0)
-      '@headless-coders/gemini-adapter': file:packages/gemini-adapter(@openai/codex-sdk@0.55.0)
+      '@headless-coder-sdk/claude-adapter': file:packages/claude-adapter(@anthropic-ai/claude-agent-sdk@0.1.30(zod@3.25.76))(@openai/codex-sdk@0.55.0)
+      '@headless-coder-sdk/codex-adapter': file:packages/codex-adapter(@anthropic-ai/claude-agent-sdk@0.1.30(zod@3.25.76))(@openai/codex-sdk@0.55.0)
+      '@headless-coder-sdk/gemini-adapter': file:packages/gemini-adapter(@openai/codex-sdk@0.55.0)
     transitivePeerDependencies:
       - '@anthropic-ai/claude-agent-sdk'
       - '@openai/codex-sdk'
 
-  '@headless-coders/gemini-adapter@file:packages/gemini-adapter(@openai/codex-sdk@0.55.0)':
+  '@headless-coder-sdk/gemini-adapter@file:packages/gemini-adapter(@openai/codex-sdk@0.55.0)':
     dependencies:
-      '@headless-coders/core': file:packages/core(@anthropic-ai/claude-agent-sdk@0.1.30(zod@3.25.76))(@openai/codex-sdk@0.55.0)
+      '@headless-coder-sdk/core': file:packages/core(@anthropic-ai/claude-agent-sdk@0.1.30(zod@3.25.76))(@openai/codex-sdk@0.55.0)
     transitivePeerDependencies:
       - '@openai/codex-sdk'
 

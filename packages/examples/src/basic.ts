@@ -1,12 +1,12 @@
 /**
- * Demonstrates how to execute a single headless coder turn via the shared factory.
+ * Demonstrates how to execute a single headless-coder-sdk turn via the shared factory.
  */
 
 import { fileURLToPath } from 'node:url';
 import process from 'node:process';
-import { createCoder } from '@headless-coders/core/factory';
-import { CODER_TYPES } from '@headless-coders/core';
-import type { Provider, PromptInput } from '@headless-coders/core/types';
+import { createCoder } from '@headless-coder-sdk/core/factory';
+import { CODER_TYPES } from '@headless-coder-sdk/core';
+import type { Provider, PromptInput } from '@headless-coder-sdk/core/types';
 
 const SUPPORTED_PROVIDERS: Provider[] = Object.values(CODER_TYPES);
 
@@ -26,7 +26,7 @@ function parseArgs(argv: string[]): [Provider, PromptInput] {
     : CODER_TYPES.CODEX;
   const prompt =
     promptParts.join(' ').trim() ||
-    'Summarise the shared headless coder abstraction in three bullet points.';
+    'Summarise the headless-coder-sdk abstraction in three bullet points.';
   return [provider, prompt];
 }
 

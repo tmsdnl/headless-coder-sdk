@@ -1,5 +1,5 @@
 /**
- * @fileoverview Validates Gemini CLI integration through the shared headless coder facade.
+ * @fileoverview Validates Gemini CLI integration through the shared headless-coder-sdk facade.
  *
  * The test instructs Gemini to generate a calculator in the designated workspace and verifies the output.
  */
@@ -10,11 +10,11 @@ import { mkdir, rm, readFile } from 'node:fs/promises';
 import path from 'node:path';
 import process from 'node:process';
 import { JSDOM } from 'jsdom';
-import { createCoder } from '@headless-coders/core/factory';
-import { CODER_TYPES } from '@headless-coders/core';
-import type { PromptInput, RunResult } from '@headless-coders/core/types';
+import { createCoder } from '@headless-coder-sdk/core/factory';
+import { CODER_TYPES } from '@headless-coder-sdk/core';
+import type { PromptInput, RunResult } from '@headless-coder-sdk/core/types';
 
-const GEMINI_WORKSPACE = process.env.GEMINI_TEST_WORKSPACE ?? '/tmp/headless-coder/test_gemini';
+const GEMINI_WORKSPACE = process.env.GEMINI_TEST_WORKSPACE ?? '/tmp/headless-coder-sdk/test_gemini';
 const GEMINI_TIMEOUT_MS = Number.parseInt(process.env.GEMINI_TEST_TIMEOUT_MS ?? '', 10) || 180_000;
 
 /**

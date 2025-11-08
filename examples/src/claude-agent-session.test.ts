@@ -1,5 +1,5 @@
 /**
- * @fileoverview Validates Claude Agent SDK integration through the shared headless coder facade.
+ * @fileoverview Validates Claude Agent SDK integration through the shared headless-coder-sdk facade.
  *
  * The test instructs Claude to generate a calculator and verifies the produced page.
  */
@@ -11,11 +11,11 @@ import { constants as fsConstants } from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
 import { JSDOM } from 'jsdom';
-import { createCoder } from '@headless-coders/core/factory';
-import { CODER_TYPES } from '@headless-coders/core';
-import type { PromptInput, RunResult } from '@headless-coders/core/types';
+import { createCoder } from '@headless-coder-sdk/core/factory';
+import { CODER_TYPES } from '@headless-coder-sdk/core';
+import type { PromptInput, RunResult } from '@headless-coder-sdk/core/types';
 
-const CLAUDE_WORKSPACE = process.env.CLAUDE_TEST_WORKSPACE ?? '/tmp/headless-coder/test_claude';
+const CLAUDE_WORKSPACE = process.env.CLAUDE_TEST_WORKSPACE ?? '/tmp/headless-coder-sdk/test_claude';
 const CLAUDE_TIMEOUT_MS = Number.parseInt(process.env.CLAUDE_TEST_TIMEOUT_MS ?? '', 10) || 180_000;
 
 /**

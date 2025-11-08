@@ -1,5 +1,5 @@
 /**
- * @fileoverview Integration test that exercises Codex via the headless coder facade.
+ * @fileoverview Integration test that exercises Codex via the headless-coder-sdk facade.
  *
  * The test instructs Codex to generate a web-based calculator in a temporary workspace,
  * then verifies the generated page behaves correctly by simulating user interaction
@@ -12,11 +12,11 @@ import { mkdir, readFile, rm } from 'node:fs/promises';
 import path from 'node:path';
 import process from 'node:process';
 import { JSDOM } from 'jsdom';
-import { createCoder } from '@headless-coders/core/factory';
-import { CODER_TYPES } from '@headless-coders/core';
-import type { PromptInput } from '@headless-coders/core/types';
+import { createCoder } from '@headless-coder-sdk/core/factory';
+import { CODER_TYPES } from '@headless-coder-sdk/core';
+import type { PromptInput } from '@headless-coder-sdk/core/types';
 
-const TARGET_DIR = '/tmp/headless-coder/test';
+const TARGET_DIR = '/tmp/headless-coder-sdk/test';
 
 /**
  * Prepares an empty working directory for Codex.
@@ -42,7 +42,7 @@ async function prepareWorkspace(dir: string): Promise<void> {
  *   targetDir: Absolute directory where Codex should write files.
  *
  * Returns:
- *   Prompt input compatible with the HeadlessCoder interface.
+ *   Prompt input compatible with the headless-coder-sdk interface.
  */
 function buildCalculatorPrompt(targetDir: string): PromptInput {
   const instructions = [

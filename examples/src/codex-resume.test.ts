@@ -1,8 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import process from 'node:process';
-import { createCoder } from '@headless-coders/core/factory';
-import { CODER_TYPES } from '@headless-coders/core';
+import { createCoder } from '@headless-coder-sdk/core/factory';
+import { CODER_TYPES } from '@headless-coder-sdk/core';
 
 test('codex resumes a conversation', async () => {
   const coder = createCoder(CODER_TYPES.CODEX, {

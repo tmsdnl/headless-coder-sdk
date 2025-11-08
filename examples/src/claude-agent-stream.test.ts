@@ -10,11 +10,11 @@ import { constants as fsConstants } from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
 import { JSDOM } from 'jsdom';
-import { createCoder } from '@headless-coders/core/factory';
-import { CODER_TYPES } from '@headless-coders/core';
-import type { PromptInput } from '@headless-coders/core/types';
+import { createCoder } from '@headless-coder-sdk/core/factory';
+import { CODER_TYPES } from '@headless-coder-sdk/core';
+import type { PromptInput } from '@headless-coder-sdk/core/types';
 
-const WORKSPACE = process.env.CLAUDE_STREAM_WORKSPACE ?? '/tmp/headless-coder/test_claude_stream';
+const WORKSPACE = process.env.CLAUDE_STREAM_WORKSPACE ?? '/tmp/headless-coder-sdk/test_claude_stream';
 const STREAM_FILE = 'stream.txt';
 
 /**
@@ -57,7 +57,7 @@ async function loadClaudeEnvironment(dir: string): Promise<void> {
  * Copies Claude configuration from a known source directory when present.
  */
 async function hydrateClaudeConfig(targetDir: string): Promise<void> {
-  const sourceDir = process.env.CLAUDE_STREAM_CONFIG_SOURCE ?? '/tmp/headless-coder/test_claude/.claude';
+  const sourceDir = process.env.CLAUDE_STREAM_CONFIG_SOURCE ?? '/tmp/headless-coder-sdk/test_claude/.claude';
   try {
     await access(sourceDir, fsConstants.R_OK);
   } catch {

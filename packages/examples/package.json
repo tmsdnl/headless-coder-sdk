@@ -1,5 +1,5 @@
 {
-  "name": "@headless-coders/examples",
+  "name": "@headless-coder-sdk/examples",
   "version": "0.1.0",
   "type": "module",
   "private": true,
@@ -12,7 +12,7 @@
     "build": "tsc -p tsconfig.build.json"
   },
   "dependencies": {
-    "@headless-coders/core": "file:../core"
+    "@headless-coder-sdk/core": "file:../core"
   },
   "devDependencies": {
     "typescript": "^5.4.0"

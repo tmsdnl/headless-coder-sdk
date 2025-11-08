@@ -1,14 +1,14 @@
-# Headless Coders
+# headless-coder-sdk
 
-This workspace hosts the shared headless coder abstraction together with provider-specific adapters.
+This workspace hosts the shared headless-coder-sdk abstraction together with provider-specific adapters.
 
 ## Packages
 
-- `@headless-coders/core` – Shared types and the `createCoder` factory.
-- `@headless-coders/codex-adapter` – Adapter wrapping `@openai/codex-sdk`.
-- `@headless-coders/claude-adapter` – Adapter wrapping `@anthropic-ai/claude-agent-sdk`.
-- `@headless-coders/gemini-adapter` – Adapter invoking the Gemini CLI in headless mode.
-- `@headless-coders/examples` – Sample usage scripts demonstrating runtime wiring.
+- `@headless-coder-sdk/core` – Shared types and the `createCoder` factory.
+- `@headless-coder-sdk/codex-adapter` – Adapter wrapping `@openai/codex-sdk`.
+- `@headless-coder-sdk/claude-adapter` – Adapter wrapping `@anthropic-ai/claude-agent-sdk`.
+- `@headless-coder-sdk/gemini-adapter` – Adapter invoking the Gemini CLI in headless mode.
+- `@headless-coder-sdk/examples` – Sample usage scripts demonstrating runtime wiring.
 
 ## Adapter Event Mappings
 
@@ -19,8 +19,8 @@ This workspace hosts the shared headless coder abstraction together with provide
 ## Basic Usage
 
 ```ts
-import { createCoder } from '@headless-coders/core/factory';
-import { CODER_TYPES } from '@headless-coders/core';
+import { createCoder } from '@headless-coder-sdk/core/factory';
+import { CODER_TYPES } from '@headless-coder-sdk/core';
 
 const coder = createCoder(CODER_TYPES.CODEX, { workingDirectory: process.cwd() });
 const thread = await coder.startThread();
@@ -31,8 +31,8 @@ console.log(result.text);
 ## Streaming Example (Claude)
 
 ```ts
-import { createCoder } from '@headless-coders/core/factory';
-import { CODER_TYPES } from '@headless-coders/core';
+import { createCoder } from '@headless-coder-sdk/core/factory';
+import { CODER_TYPES } from '@headless-coder-sdk/core';
 
 const claude = createCoder(CODER_TYPES.CLAUDE_CODE, {
   workingDirectory: process.cwd(),
@@ -54,8 +54,8 @@ console.log(followUp.text);
 ## Structured Output Example (Gemini)
 
 ```ts
-import { createCoder } from '@headless-coders/core/factory';
-import { CODER_TYPES } from '@headless-coders/core';
+import { createCoder } from '@headless-coder-sdk/core/factory';
+import { CODER_TYPES } from '@headless-coder-sdk/core';
 
 const gemini = createCoder(CODER_TYPES.GEMINI, {
   workingDirectory: process.cwd(),
@@ -89,8 +89,8 @@ console.log(turn.json); // Parsed object based on the schema above
 ## Resume Example (Codex)
 
 ```ts
-import { createCoder } from '@headless-coders/core/factory';
-import { CODER_TYPES } from '@headless-coders/core';
+import { createCoder } from '@headless-coder-sdk/core/factory';
+import { CODER_TYPES } from '@headless-coder-sdk/core';
 
 const codex = createCoder(CODER_TYPES.CODEX, {
   workingDirectory: process.cwd(),
@@ -110,8 +110,8 @@ console.log(followUp.text);
 ## Multi-Provider Workflow Example
 
 ```ts
-import { createCoder } from '@headless-coders/core/factory';
-import { CODER_TYPES } from '@headless-coders/core';
+import { createCoder } from '@headless-coder-sdk/core/factory';
+import { CODER_TYPES } from '@headless-coder-sdk/core';
 
 const codex = createCoder(CODER_TYPES.CODEX, {
   workingDirectory: process.cwd(),
@@ -202,4 +202,4 @@ if (Array.isArray(reviewIssues) && reviewIssues.length > 0) {
   - or `pnpm install`
 - Run workspace builds: `npm run build` or `pnpm run build`
 - Execute tests across packages: `npm run test` or `pnpm run test`
-- Execute the end-to-end examples suite: `npm run test -- --workspace @headless-coder/examples-tests`
+- Execute the end-to-end examples suite: `npm run test -- --workspace @headless-coder-sdk/examples-tests`

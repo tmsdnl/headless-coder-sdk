@@ -9,11 +9,11 @@ import { createWriteStream } from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
 import { JSDOM } from 'jsdom';
-import { createCoder } from '@headless-coders/core/factory';
-import { CODER_TYPES } from '@headless-coders/core';
-import type { PromptInput } from '@headless-coders/core/types';
+import { createCoder } from '@headless-coder-sdk/core/factory';
+import { CODER_TYPES } from '@headless-coder-sdk/core';
+import type { PromptInput } from '@headless-coder-sdk/core/types';
 
-const WORKSPACE = process.env.CODEX_STREAM_WORKSPACE ?? '/tmp/headless-coder/test_codex_stream';
+const WORKSPACE = process.env.CODEX_STREAM_WORKSPACE ?? '/tmp/headless-coder-sdk/test_codex_stream';
 const STREAM_FILE = 'stream.txt';
 
 /**

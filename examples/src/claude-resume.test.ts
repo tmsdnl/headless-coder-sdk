@@ -4,11 +4,11 @@ import { access, mkdir, rm, cp } from 'node:fs/promises';
 import { constants as fsConstants } from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
-import { createCoder } from '@headless-coders/core/factory';
-import { CODER_TYPES } from '@headless-coders/core';
+import { createCoder } from '@headless-coder-sdk/core/factory';
+import { CODER_TYPES } from '@headless-coder-sdk/core';
 
-const WORKSPACE = process.env.CLAUDE_RESUME_WORKSPACE ?? '/tmp/headless-coder/test_claude_resume';
-const CONFIG_SOURCE = process.env.CLAUDE_STREAM_CONFIG_SOURCE ?? '/tmp/headless-coder/test_claude/.claude';
+const WORKSPACE = process.env.CLAUDE_RESUME_WORKSPACE ?? '/tmp/headless-coder-sdk/test_claude_resume';
+const CONFIG_SOURCE = process.env.CLAUDE_STREAM_CONFIG_SOURCE ?? '/tmp/headless-coder-sdk/test_claude/.claude';
 
 async function hydrateClaudeConfig(targetDir: string): Promise<void> {
   try {
