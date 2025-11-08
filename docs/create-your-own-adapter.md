@@ -45,11 +45,12 @@ my-cool-coder-adapter/
 
 Your adapter must export:
 - `CODER_NAME`: a unique constant (string literal)  
-- `createAdapter(defaults?)`: a factory returning an object that implements the unified `HeadlessCoder` interface.
+- `createAdapter(defaults?)`: a factory returning the unified `HeadlessCoder` implementation, **and** assign `createAdapter.coderName = CODER_NAME` so the registry can auto-detect your adapter.
 
 ```ts
 // src/index.ts
 import type {
+  AdapterFactory,
   HeadlessCoder,
   ThreadHandle,
   PromptInput,
@@ -114,6 +115,7 @@ export function createAdapter(defaults?: StartOpts): HeadlessCoder {
     },
   };
 }
+(createAdapter as AdapterFactory).coderName = CODER_NAME;
 ```
 
 > 💡 Always include the provider’s raw event in `originalItem` for debugging and auditing.
@@ -154,7 +156,7 @@ Honor the caller’s `StartOpts` (e.g., `sandboxMode`, allow/deny lists) and onl
 import { registerAdapter, createCoder } from '@headless-coder-sdk/core';
 import { CODER_NAME as COOL, createAdapter as createCool } from '@acme/my-cool-coder-adapter';
 
-registerAdapter(COOL, createCool);
+registerAdapter(createCool);
 
 const coder = createCoder(COOL, { model: 'my-cool-model' });
 const thread = await coder.startThread();

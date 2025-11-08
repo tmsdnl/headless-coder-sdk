@@ -5,6 +5,7 @@
 import { Codex, type Thread as CodexThread } from '@openai/codex-sdk';
 import { now } from '@headless-coder-sdk/core';
 import type {
+  AdapterFactory,
   HeadlessCoder,
   ThreadHandle,
   PromptInput,
@@ -20,6 +21,7 @@ export const CODER_NAME: Provider = 'codex';
 export function createAdapter(defaults?: StartOpts): HeadlessCoder {
   return new CodexAdapter(defaults);
 }
+(createAdapter as AdapterFactory).coderName = CODER_NAME;
 
 function extractJsonPayload(text: string | undefined): unknown | undefined {
   if (!text) return undefined;

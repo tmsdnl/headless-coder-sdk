@@ -7,11 +7,15 @@ import type { AdapterFactory, AdapterName, HeadlessCoder, StartOpts } from './ty
 const registry = new Map<AdapterName, AdapterFactory>();
 
 /**
- * Registers an adapter factory under the provided identifier.
+ * Registers an adapter factory discovered from the factory's `coderName` property.
  *
- * Calling this multiple times with the same name replaces the existing factory.
+ * Calling this multiple times with the same factory replaces the existing entry.
  */
-export function registerAdapter(name: AdapterName, factory: AdapterFactory): void {
+export function registerAdapter(factory: AdapterFactory): void {
+  const name = factory.coderName;
+  if (!name) {
+    throw new Error('Adapter factory must define a coderName property before calling registerAdapter().');
+  }
   registry.set(name, factory);
 }
 

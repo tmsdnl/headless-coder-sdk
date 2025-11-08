@@ -6,6 +6,7 @@ import { spawn } from 'node:child_process';
 import * as readline from 'node:readline';
 import { now } from '@headless-coder-sdk/core';
 import type {
+  AdapterFactory,
   HeadlessCoder,
   ThreadHandle,
   PromptInput,
@@ -22,6 +23,7 @@ export const CODER_NAME: Provider = 'gemini';
 export function createAdapter(defaults?: StartOpts): HeadlessCoder {
   return new GeminiAdapter(defaults);
 }
+(createAdapter as AdapterFactory).coderName = CODER_NAME;
 
 const STRUCTURED_OUTPUT_SUFFIX =
   'Respond with JSON that matches the provided schema. Do not include explanatory text outside the JSON.';

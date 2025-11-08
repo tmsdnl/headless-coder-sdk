@@ -22,7 +22,7 @@ Headless Coder SDK is an open-source framework that unifies multiple headless AI
 import { registerAdapter, createCoder } from '@headless-coder-sdk/core/factory';
 import { CODER_NAME as CODEX_CODER, createAdapter as createCodexAdapter } from '@headless-coder-sdk/codex-adapter';
 
-registerAdapter(CODEX_CODER, createCodexAdapter);
+registerAdapter(createCodexAdapter);
 
 const coder = createCoder(CODEX_CODER, { workingDirectory: process.cwd() });
 const thread = await coder.startThread();
@@ -36,7 +36,7 @@ console.log(result.text);
 import { registerAdapter, createCoder } from '@headless-coder-sdk/core/factory';
 import { CODER_NAME as CLAUDE_CODER, createAdapter as createClaudeAdapter } from '@headless-coder-sdk/claude-adapter';
 
-registerAdapter(CLAUDE_CODER, createClaudeAdapter);
+registerAdapter(createClaudeAdapter);
 
 const claude = createCoder(CLAUDE_CODER, {
   workingDirectory: process.cwd(),
@@ -61,7 +61,7 @@ console.log(followUp.text);
 import { registerAdapter, createCoder } from '@headless-coder-sdk/core/factory';
 import { CODER_NAME as GEMINI_CODER, createAdapter as createGeminiAdapter } from '@headless-coder-sdk/gemini-adapter';
 
-registerAdapter(GEMINI_CODER, createGeminiAdapter);
+registerAdapter(createGeminiAdapter);
 
 const gemini = createCoder(GEMINI_CODER, {
   workingDirectory: process.cwd(),
@@ -98,7 +98,7 @@ console.log(turn.json); // Parsed object based on the schema above
 import { registerAdapter, createCoder } from '@headless-coder-sdk/core/factory';
 import { CODER_NAME as CODEX_CODER, createAdapter as createCodexAdapter } from '@headless-coder-sdk/codex-adapter';
 
-registerAdapter(CODEX_CODER, createCodexAdapter);
+registerAdapter(createCodexAdapter);
 
 const codex = createCoder(CODEX_CODER, {
   workingDirectory: process.cwd(),
@@ -132,9 +132,9 @@ import {
   createAdapter as createGeminiAdapter,
 } from '@headless-coder-sdk/gemini-adapter';
 
-registerAdapter(CODEX_CODER, createCodexAdapter);
-registerAdapter(CLAUDE_CODER, createClaudeAdapter);
-registerAdapter(GEMINI_CODER, createGeminiAdapter);
+registerAdapter(createCodexAdapter);
+registerAdapter(createClaudeAdapter);
+registerAdapter(createGeminiAdapter);
 
 const codex = createCoder(CODEX_CODER, {
   workingDirectory: process.cwd(),

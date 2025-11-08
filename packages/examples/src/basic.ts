@@ -23,9 +23,9 @@ let adaptersRegistered = false;
 
 function ensureAdaptersRegistered(): void {
   if (adaptersRegistered) return;
-  registerAdapter(CODEX_CODER_NAME, createCodexAdapter);
-  registerAdapter(CLAUDE_CODER_NAME, createClaudeAdapter);
-  registerAdapter(GEMINI_CODER_NAME, createGeminiAdapter);
+  registerAdapter(createCodexAdapter);
+  registerAdapter(createClaudeAdapter);
+  registerAdapter(createGeminiAdapter);
   adaptersRegistered = true;
 }
 

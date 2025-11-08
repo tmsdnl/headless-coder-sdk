@@ -16,8 +16,8 @@ let registered = false;
 
 export function ensureAdaptersRegistered(): void {
   if (registered) return;
-  registerAdapter(CODEX_CODER_NAME, createCodexAdapter);
-  registerAdapter(CLAUDE_CODER_NAME, createClaudeAdapter);
-  registerAdapter(GEMINI_CODER_NAME, createGeminiAdapter);
+  registerAdapter(createCodexAdapter);
+  registerAdapter(createClaudeAdapter);
+  registerAdapter(createGeminiAdapter);
   registered = true;
 }

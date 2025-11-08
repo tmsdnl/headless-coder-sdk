@@ -6,6 +6,7 @@ import { query, type SDKMessage, type Options } from '@anthropic-ai/claude-agent
 import { randomUUID } from 'node:crypto';
 import { now } from '@headless-coder-sdk/core';
 import type {
+  AdapterFactory,
   HeadlessCoder,
   ThreadHandle,
   PromptInput,
@@ -22,6 +23,7 @@ export const CODER_NAME: Provider = 'claude';
 export function createAdapter(defaults?: StartOpts): HeadlessCoder {
   return new ClaudeAdapter(defaults);
 }
+(createAdapter as AdapterFactory).coderName = CODER_NAME;
 
 const STRUCTURED_OUTPUT_SUFFIX =
   'You must respond with valid JSON that satisfies the provided schema. Do not include prose before or after the JSON.';

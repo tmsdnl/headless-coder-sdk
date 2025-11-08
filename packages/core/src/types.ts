@@ -173,4 +173,6 @@ export interface HeadlessCoder {
   close?(thread: ThreadHandle): Promise<void>;
 }
 
-export type AdapterFactory = (defaults?: StartOpts) => HeadlessCoder;
+export type AdapterFactory = ((defaults?: StartOpts) => HeadlessCoder) & {
+  coderName?: AdapterName;
+};
