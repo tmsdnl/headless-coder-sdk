@@ -3,3 +3,4 @@ node_modules
 .sl
 .plan/
 packages/*/dist/
+.claude/
