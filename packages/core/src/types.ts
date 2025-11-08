@@ -52,6 +52,7 @@ export interface RunOpts {
   outputSchema?: object;
   streamPartialMessages?: boolean;
   extraEnv?: Record<string, string>;
+  signal?: AbortSignal;
 }
 
 /**
@@ -63,6 +64,7 @@ export interface ThreadHandle {
   id?: string;
   run(input: PromptInput, opts?: RunOpts): Promise<RunResult>;
   runStreamed(input: PromptInput, opts?: RunOpts): EventIterator;
+  interrupt?(reason?: string): Promise<void>;
   close?(): Promise<void>;
 }
 
@@ -146,6 +148,7 @@ export type CoderStreamEvent =
       ts: number;
       originalItem?: any;
     }
+  | { type: 'cancelled'; provider: Provider; ts: number; originalItem?: any }
   | { type: 'done'; provider: Provider; ts: number; originalItem?: any };
 
 export type EventIterator = AsyncIterable<CoderStreamEvent>;

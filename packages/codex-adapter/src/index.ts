@@ -1,8 +1,10 @@
 /**
- * @fileoverview Codex adapter that conforms to the HeadlessCoder interface.
+ * @fileoverview Codex adapter that conforms to the HeadlessCoder interface with
+ * explicit cancellation support via worker processes.
  */
 
-import { Codex, type Thread as CodexThread } from '@openai/codex-sdk';
+import { fork, ChildProcess } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
 import { now } from '@headless-coder-sdk/core';
 import type {
   AdapterFactory,
@@ -17,11 +19,484 @@ import type {
   Provider,
 } from '@headless-coder-sdk/core';
 
+const WORKER_PATH = fileURLToPath(new URL('./worker.js', import.meta.url));
+const SOFT_KILL_DELAY_MS = 250;
+const HARD_KILL_DELAY_MS = 1500;
+const DONE = Symbol('stream-done');
+
 export const CODER_NAME: Provider = 'codex';
 export function createAdapter(defaults?: StartOpts): HeadlessCoder {
   return new CodexAdapter(defaults);
 }
 (createAdapter as AdapterFactory).coderName = CODER_NAME;
+
+interface CodexThreadOptions {
+  model?: string;
+  sandboxMode?: 'read-only' | 'workspace-write' | 'danger-full-access';
+  workingDirectory?: string;
+  skipGitRepoCheck?: boolean;
+}
+
+interface CodexThreadState {
+  id?: string;
+  options: CodexThreadOptions;
+  codexExecutablePath?: string;
+  currentRun?: ActiveRun | null;
+}
+
+interface WorkerRequest {
+  input: string;
+  outputSchema?: object;
+  thread: {
+    id?: string;
+    options: CodexThreadOptions;
+  };
+  settings: {
+    codexExecutablePath?: string;
+  };
+}
+
+interface WorkerRunPayload {
+  threadId?: string;
+  result: {
+    items: any[];
+    finalResponse: string;
+    usage?: any;
+  };
+}
+
+interface SerializedError {
+  message: string;
+  stack?: string;
+  name?: string;
+  code?: string;
+}
+
+type WorkerMessage =
+  | { type: 'runResult'; payload: WorkerRunPayload }
+  | { type: 'streamEvent'; payload: any }
+  | { type: 'streamDone'; threadId?: string }
+  | { type: 'cancelled'; reason?: string }
+  | { type: 'aborted'; reason?: string }
+  | { type: 'error'; error: SerializedError };
+
+interface ActiveRun {
+  child: ChildProcess;
+  abortController: AbortController;
+  stopExternal: () => void;
+  aborted: boolean;
+  softKillTimer?: NodeJS.Timeout;
+  hardKillTimer?: NodeJS.Timeout;
+  abortReason?: string;
+}
+
+export class CodexAdapter implements HeadlessCoder {
+  constructor(private readonly defaultOpts?: StartOpts) {}
+
+  async startThread(opts?: StartOpts): Promise<ThreadHandle> {
+    const merged = this.mergeStartOpts(opts);
+    const state: CodexThreadState = {
+      options: this.extractThreadOptions(merged),
+      codexExecutablePath: merged.codexExecutablePath,
+    };
+    return this.createThreadHandle(state);
+  }
+
+  async resumeThread(threadId: string, opts?: StartOpts): Promise<ThreadHandle> {
+    const merged = this.mergeStartOpts(opts);
+    const state: CodexThreadState = {
+      id: threadId,
+      options: this.extractThreadOptions(merged),
+      codexExecutablePath: merged.codexExecutablePath,
+    };
+    return this.createThreadHandle(state);
+  }
+
+  private async runInternal(handle: ThreadHandle, input: PromptInput, opts?: RunOpts): Promise<RunResult> {
+    const state = handle.internal as CodexThreadState;
+    this.assertIdle(state);
+    const normalizedInput = normalizeInput(input);
+    const { promise, cleanup } = this.launchRunWorker(state, normalizedInput, opts);
+    try {
+      const payload = await promise;
+      if (payload.threadId) {
+        state.id = payload.threadId;
+        handle.id = payload.threadId;
+      }
+      return this.mapRunResult(payload);
+    } finally {
+      cleanup();
+    }
+  }
+
+  private runStreamedInternal(handle: ThreadHandle, input: PromptInput, opts?: RunOpts): EventIterator {
+    const state = handle.internal as CodexThreadState;
+    this.assertIdle(state);
+    const normalizedInput = normalizeInput(input);
+    return this.buildStreamIterator(state, handle, normalizedInput, opts);
+  }
+
+  getThreadId(thread: ThreadHandle): string | undefined {
+    const state = thread.internal as CodexThreadState;
+    return state.id;
+  }
+
+  private createThreadHandle(state: CodexThreadState): ThreadHandle {
+    const handle: ThreadHandle = {
+      provider: CODER_NAME,
+      internal: state,
+      id: state.id,
+      run: (input, opts) => this.runInternal(handle, input, opts),
+      runStreamed: (input, opts) => this.runStreamedInternal(handle, input, opts),
+      interrupt: async reason => {
+        this.abortCurrentRun(state, reason ?? 'Interrupted');
+      },
+    };
+    return handle;
+  }
+
+  private mergeStartOpts(opts?: StartOpts): StartOpts {
+    return { ...this.defaultOpts, ...opts };
+  }
+
+  private extractThreadOptions(opts: StartOpts): CodexThreadOptions {
+    return {
+      model: opts.model,
+      sandboxMode: opts.sandboxMode,
+      workingDirectory: opts.workingDirectory,
+      skipGitRepoCheck: opts.skipGitRepoCheck,
+    };
+  }
+
+  private launchRunWorker(state: CodexThreadState, input: string, opts?: RunOpts) {
+    const child = fork(WORKER_PATH, { stdio: ['inherit', 'inherit', 'inherit', 'ipc'] });
+    const abortController = new AbortController();
+    const stopExternal = linkSignal(opts?.signal, reason => {
+      if (!abortController.signal.aborted) {
+        abortController.abort(reason ?? 'Interrupted');
+        this.abortChild(state, reason);
+      }
+    });
+    const active: ActiveRun = {
+      child,
+      abortController,
+      stopExternal,
+      aborted: false,
+    };
+    state.currentRun = active;
+
+    const request: WorkerRequest = {
+      input,
+      outputSchema: opts?.outputSchema,
+      thread: {
+        id: state.id,
+        options: state.options,
+      },
+      settings: {
+        codexExecutablePath: state.codexExecutablePath,
+      },
+    };
+
+    const promise = new Promise<WorkerRunPayload>((resolve, reject) => {
+      let settled = false;
+      const detach = () => {
+        if (settled) return;
+        settled = true;
+        child.removeAllListeners();
+      };
+
+      child.on('message', (raw: WorkerMessage) => {
+        if (settled) return;
+        switch (raw.type) {
+          case 'runResult':
+            detach();
+            resolve(raw.payload);
+            break;
+          case 'aborted':
+            detach();
+            reject(createAbortError(raw.reason));
+            break;
+          case 'error':
+            detach();
+            reject(deserializeError(raw.error));
+            break;
+        }
+      });
+
+      child.once('exit', (code, signal) => {
+        if (settled) return;
+        detach();
+        if (active.aborted || signal) {
+          reject(createAbortError(active.abortReason));
+        } else if (code === 0) {
+          reject(new Error('Codex worker exited unexpectedly.'));
+        } else {
+          reject(new Error(`Codex worker exited with code ${code}`));
+        }
+      });
+
+      child.once('error', error => {
+        if (settled) return;
+        detach();
+        reject(error);
+      });
+
+      child.send({ type: 'run', payload: request });
+    });
+
+    const cleanup = () => {
+      if (state.currentRun === active) {
+        state.currentRun = null;
+      }
+      this.clearKillTimers(active);
+      active.stopExternal();
+      try {
+        child.removeAllListeners();
+      } catch {
+        // ignore
+      }
+      if (!child.killed && child.exitCode === null) {
+        child.kill('SIGTERM');
+      }
+    };
+
+    return { promise, cleanup };
+  }
+
+  private buildStreamIterator(
+    state: CodexThreadState,
+    handle: ThreadHandle,
+    input: string,
+    opts?: RunOpts,
+  ): EventIterator {
+    const child = fork(WORKER_PATH, { stdio: ['inherit', 'inherit', 'inherit', 'ipc'] });
+    const abortController = new AbortController();
+    const stopExternal = linkSignal(opts?.signal, reason => {
+      if (!abortController.signal.aborted) {
+        abortController.abort(reason ?? 'Interrupted');
+        this.abortChild(state, reason);
+      }
+    });
+    const active: ActiveRun = {
+      child,
+      abortController,
+      stopExternal,
+      aborted: false,
+    };
+    state.currentRun = active;
+
+    const request: WorkerRequest = {
+      input,
+      outputSchema: opts?.outputSchema,
+      thread: {
+        id: state.id,
+        options: state.options,
+      },
+      settings: {
+        codexExecutablePath: state.codexExecutablePath,
+      },
+    };
+
+    const queue: Array<CoderStreamEvent | typeof DONE | Error> = [];
+    const resolvers: Array<(value: CoderStreamEvent | typeof DONE | Error) => void> = [];
+    let finished = false;
+
+    const push = (entry: CoderStreamEvent | typeof DONE | Error) => {
+      if (resolvers.length) {
+        const resolve = resolvers.shift()!;
+        resolve(entry);
+      } else {
+        queue.push(entry);
+      }
+    };
+
+    const next = (): Promise<CoderStreamEvent | typeof DONE | Error> => {
+      if (queue.length) {
+        return Promise.resolve(queue.shift()!);
+      }
+      if (finished) {
+        return Promise.resolve(DONE);
+      }
+      return new Promise(resolve => {
+        resolvers.push(resolve);
+      });
+    };
+
+    child.on('message', (raw: WorkerMessage) => {
+      switch (raw.type) {
+        case 'streamEvent': {
+          for (const event of normalizeCodexEvent(raw.payload)) {
+            push(event);
+          }
+          break;
+        }
+        case 'streamDone': {
+          if (raw.threadId) {
+            state.id = raw.threadId;
+            handle.id = raw.threadId;
+          }
+          finished = true;
+          push(DONE);
+          break;
+        }
+        case 'cancelled': {
+          push({
+            type: 'cancelled',
+            provider: CODER_NAME,
+            ts: now(),
+            originalItem: { reason: raw.reason ?? 'Interrupted' },
+          });
+          finished = true;
+          push(DONE);
+          break;
+        }
+        case 'aborted': {
+          push(createAbortError(raw.reason));
+          finished = true;
+          push(DONE);
+          break;
+        }
+        case 'error': {
+          push(deserializeError(raw.error));
+          finished = true;
+          push(DONE);
+          break;
+        }
+      }
+    });
+
+    child.once('exit', code => {
+      if (finished) return;
+      finished = true;
+      if (active.aborted) {
+        push({
+          type: 'cancelled',
+          provider: CODER_NAME,
+          ts: now(),
+          originalItem: { reason: active.abortReason ?? 'Interrupted' },
+        });
+        push(DONE);
+        return;
+      }
+      if (code === 0) {
+        push(DONE);
+      } else {
+        push(new Error(`Codex worker exited with code ${code}`));
+        push(DONE);
+      }
+    });
+
+    child.once('error', error => {
+      if (finished) return;
+      finished = true;
+      push(error);
+      push(DONE);
+    });
+
+    child.send({ type: 'stream', payload: request });
+
+    const adapter = this;
+    const iterator = {
+      [Symbol.asyncIterator]: async function* () {
+        let threw = false;
+        try {
+          while (true) {
+            const entry = await next();
+            if (entry === DONE) break;
+            if (entry instanceof Error) throw entry;
+            yield entry;
+          }
+        } catch (error) {
+          threw = true;
+          throw error;
+        } finally {
+          stopExternal();
+          if (!finished && !active.aborted && !threw) {
+            adapter.abortChild(state, 'Stream closed');
+          }
+          adapter.clearKillTimers(active);
+          if (state.currentRun === active) {
+            state.currentRun = null;
+          }
+          if (!child.killed && child.exitCode === null) {
+            child.kill('SIGTERM');
+          }
+        }
+      },
+    };
+
+    return iterator;
+  }
+
+  private abortCurrentRun(state: CodexThreadState, reason?: string): void {
+    const active = state.currentRun;
+    if (!active) return;
+    if (!active.abortController.signal.aborted) {
+      active.abortController.abort(reason ?? 'Interrupted');
+    }
+    this.abortChild(state, reason);
+  }
+
+  private abortChild(state: CodexThreadState, reason?: string): void {
+    const active = state.currentRun;
+    if (!active || active.aborted) return;
+    active.aborted = true;
+    active.abortReason = reason ?? 'Interrupted';
+    try {
+      active.child.send?.({ type: 'abort', reason: active.abortReason });
+    } catch {
+      // ignore
+    }
+    if (!active.softKillTimer) {
+      active.softKillTimer = setTimeout(() => {
+        if (!active.child.killed) {
+          active.child.kill('SIGTERM');
+        }
+      }, SOFT_KILL_DELAY_MS);
+    }
+    if (!active.hardKillTimer) {
+      active.hardKillTimer = setTimeout(() => {
+        if (!active.child.killed) {
+          active.child.kill('SIGKILL');
+        }
+      }, HARD_KILL_TIMEOUT_MS);
+    }
+  }
+
+  private clearKillTimers(active: ActiveRun): void {
+    if (active.softKillTimer) {
+      clearTimeout(active.softKillTimer);
+      active.softKillTimer = undefined;
+    }
+    if (active.hardKillTimer) {
+      clearTimeout(active.hardKillTimer);
+      active.hardKillTimer = undefined;
+    }
+  }
+
+  private mapRunResult(payload: WorkerRunPayload): RunResult {
+    const finalResponse = payload.result.finalResponse ?? '';
+    const structured = extractJsonPayload(finalResponse);
+    return {
+      threadId: payload.threadId,
+      text: finalResponse || undefined,
+      json: structured,
+      usage: payload.result.usage,
+      raw: payload.result,
+    };
+  }
+
+  private assertIdle(state: CodexThreadState): void {
+    if (state.currentRun) {
+      throw new Error('Codex adapter only supports one in-flight run per thread.');
+    }
+  }
+}
+
+function normalizeInput(input: PromptInput): string {
+  if (typeof input === 'string') return input;
+  return input.map(message => `${message.role.toUpperCase()}: ${message.content}`).join('\n');
+}
 
 function extractJsonPayload(text: string | undefined): unknown | undefined {
   if (!text) return undefined;
@@ -37,177 +512,9 @@ function extractJsonPayload(text: string | undefined): unknown | undefined {
   }
 }
 
-/**
- * Normalises prompt input into a string accepted by the Codex SDK.
- *
- * Args:
- *   input: Prompt payload from the caller.
- *
- * Returns:
- *   Prompt string for the Codex SDK.
- */
-function normalizeInput(input: PromptInput): string {
-  if (typeof input === 'string') return input;
-  return input.map(message => `${message.role.toUpperCase()}: ${message.content}`).join('\n');
-}
-
-/**
- * Adapter that wraps the Codex SDK with the shared HeadlessCoder interface.
- *
- * Args:
- *   defaultOpts: Options applied to every thread operation unless overridden.
- */
-export class CodexAdapter implements HeadlessCoder {
-  private client: Codex;
-
-  /**
-   * Creates a new Codex adapter instance.
-   *
-   * Args:
-   *   defaultOpts: Options applied to every thread operation unless overridden.
-   */
-  constructor(private readonly defaultOpts?: StartOpts) {
-    const config = this.defaultOpts?.codexExecutablePath
-      ? { executablePath: this.defaultOpts.codexExecutablePath }
-      : {};
-    this.client = new Codex(config as any);
-  }
-
-  /**
-   * Starts a new Codex thread.
-   *
-   * Args:
-   *   opts: Provider-specific overrides.
-   *
-   * Returns:
-   *   Handle describing the new thread.
-   */
-  async startThread(opts?: StartOpts): Promise<ThreadHandle> {
-    const options = { ...this.defaultOpts, ...opts };
-    const thread: CodexThread = this.client.startThread({
-      model: options.model,
-      sandboxMode: options.sandboxMode,
-      skipGitRepoCheck: options.skipGitRepoCheck,
-      workingDirectory: options.workingDirectory,
-    });
-    return this.createThreadHandle(thread);
-  }
-
-  /**
-   * Resumes a Codex thread by identifier.
-   *
-   * Args:
-   *   threadId: Codex thread identifier.
-   *   opts: Provider-specific overrides.
-   *
-   * Returns:
-   *   Thread handle aligned with the HeadlessCoder contract.
-   */
-  async resumeThread(threadId: string, opts?: StartOpts): Promise<ThreadHandle> {
-    const options = { ...this.defaultOpts, ...opts };
-    const thread = this.client.resumeThread(threadId, {
-      model: options.model,
-      sandboxMode: options.sandboxMode,
-      skipGitRepoCheck: options.skipGitRepoCheck,
-      workingDirectory: options.workingDirectory,
-    });
-    return this.createThreadHandle(thread);
-  }
-
-  /**
-   * Executes a run on an existing Codex thread.
-   *
-   * Args:
-   *   thread: Thread handle created via start/resume.
-   *   input: Prompt payload.
-   *   opts: Run-level overrides (e.g., structured output schema).
-   *
-   * Returns:
-   *   Run result mapped into the shared shape.
-   *
-   * Raises:
-   *   Error: Propagated when the Codex SDK fails to complete the run.
-   */
-  private async runInternal(thread: ThreadHandle, input: PromptInput, opts?: RunOpts): Promise<RunResult> {
-    const result = await (thread.internal as CodexThread).run(normalizeInput(input), {
-      outputSchema: opts?.outputSchema,
-    });
-    const threadId = (thread.internal as CodexThread).id ?? undefined;
-    const finalResponse = (result as any)?.finalResponse ?? (result as any)?.text ?? result;
-    const structured =
-      (result as any)?.parsedResponse ??
-      (result as any)?.json ??
-      (typeof finalResponse === 'string' ? extractJsonPayload(finalResponse) : undefined);
-    return {
-      threadId,
-      text: typeof finalResponse === 'string' ? finalResponse : undefined,
-      json: structured,
-      raw: result,
-    };
-  }
-
-  /**
-   * Executes a streamed run, yielding progress events.
-   *
-   * Args:
-     *   thread: Thread handle to execute against.
-     *   input: Prompt payload.
-     *   opts: Run-level overrides (currently unused).
-   *
-   * Returns:
-     *   Async iterator of stream events.
-   *
-   * Raises:
-   *   Error: Propagated when the Codex SDK streaming call fails.
-   */
-  private async *runStreamedInternal(
-    thread: ThreadHandle,
-    input: PromptInput,
-    opts?: RunOpts,
-  ): EventIterator {
-    void opts;
-    const runStream = await (thread.internal as CodexThread).runStreamed(normalizeInput(input));
-    const asyncEvents = (runStream as any)?.events ?? runStream;
-    if (!asyncEvents || typeof (asyncEvents as any)[Symbol.asyncIterator] !== 'function') {
-      throw new Error('Codex streaming API did not return an async iterator.');
-    }
-
-    for await (const event of asyncEvents as AsyncIterable<any>) {
-      for (const normalized of normalizeCodexEvent(event)) {
-        yield normalized;
-      }
-    }
-  }
-
-  /**
-   * Retrieves the thread identifier managed by Codex.
-   *
-   * Args:
-   *   thread: Thread handle.
-   *
-   * Returns:
-   *   Thread identifier when available.
-   */
-  getThreadId(thread: ThreadHandle): string | undefined {
-    const threadId = (thread.internal as CodexThread).id;
-    return threadId === null ? undefined : threadId;
-  }
-
-  private createThreadHandle(thread: CodexThread): ThreadHandle {
-    const handle: ThreadHandle = {
-      provider: 'codex',
-      internal: thread,
-      id: (thread as CodexThread).id ?? undefined,
-      run: (input, opts) => this.runInternal(handle, input, opts),
-      runStreamed: (input, opts) => this.runStreamedInternal(handle, input, opts),
-    };
-    return handle;
-  }
-}
-
 function normalizeCodexEvent(event: any): CoderStreamEvent[] {
   const ts = now();
-  const provider: Provider = 'codex';
+  const provider: Provider = CODER_NAME;
   const ev = event ?? {};
   const type = ev?.type;
   const normalized: CoderStreamEvent[] = [];
@@ -261,76 +568,13 @@ function normalizeCodexEvent(event: any): CoderStreamEvent[] {
     return normalized;
   }
 
-  if (type === 'item.started' || type === 'item.completed') {
+  if (type === 'item.completed') {
     const item = ev.item ?? {};
     if (item.type === 'agent_message') {
       normalized.push({
         type: 'message',
         provider,
         role: 'assistant',
-        text: item.text,
-        delta: type === 'item.started',
-        ts,
-        originalItem: ev,
-      });
-      return normalized;
-    }
-
-    if (item.type === 'reasoning') {
-      normalized.push({
-        type: 'progress',
-        provider,
-        label: 'reasoning',
-        detail: item.text,
-        ts,
-        originalItem: ev,
-      });
-      return normalized;
-    }
-
-    if (item.type === 'command_execution') {
-      if (type === 'item.started') {
-        normalized.push({
-          type: 'tool_use',
-          provider,
-          name: 'command',
-          callId: item.id,
-          args: { command: item.command },
-          ts,
-          originalItem: ev,
-        });
-      } else {
-        normalized.push({
-          type: 'tool_result',
-          provider,
-          name: 'command',
-          callId: item.id,
-          result: item.aggregated_output ?? item.text,
-          exitCode: item.exit_code ?? null,
-          ts,
-          originalItem: ev,
-        });
-      }
-      return normalized;
-    }
-
-    if (item.type === 'file_change') {
-      normalized.push({
-        type: 'file_change',
-        provider,
-        path: item.path,
-        op: item.op,
-        patch: item.patch,
-        ts,
-        originalItem: ev,
-      });
-      return normalized;
-    }
-
-    if (item.type === 'plan_update') {
-      normalized.push({
-        type: 'plan_update',
-        provider,
         text: item.text,
         ts,
         originalItem: ev,
@@ -341,8 +585,34 @@ function normalizeCodexEvent(event: any): CoderStreamEvent[] {
     normalized.push({
       type: 'progress',
       provider,
-      label: item.type ?? 'item',
-      detail: item.text ?? '',
+      label: `item.completed:${item.type ?? 'event'}`,
+      ts,
+      originalItem: ev,
+    });
+    return normalized;
+  }
+
+  if (type === 'tool_use') {
+    normalized.push({
+      type: 'tool_use',
+      provider,
+      name: ev.item?.name ?? 'tool',
+      callId: ev.item?.id,
+      args: ev.item?.input,
+      ts,
+      originalItem: ev,
+    });
+    return normalized;
+  }
+
+  if (type === 'tool_result') {
+    normalized.push({
+      type: 'tool_result',
+      provider,
+      name: ev.item?.name ?? 'tool',
+      callId: ev.item?.id,
+      result: ev.item?.output,
+      exitCode: ev.item?.exit_code ?? null,
       ts,
       originalItem: ev,
     });
@@ -350,18 +620,23 @@ function normalizeCodexEvent(event: any): CoderStreamEvent[] {
   }
 
   if (type === 'turn.completed') {
-    if (ev.usage) {
-      normalized.push({ type: 'usage', provider, stats: ev.usage, ts, originalItem: ev });
-    }
+    normalized.push({
+      type: 'usage',
+      provider,
+      stats: ev.usage,
+      ts,
+      originalItem: ev,
+    });
     normalized.push({ type: 'done', provider, ts, originalItem: ev });
     return normalized;
   }
 
-  if (type === 'error') {
+  if (type === 'turn.failed') {
     normalized.push({
       type: 'error',
       provider,
-      message: ev.message ?? 'codex error',
+      code: 'turn.failed',
+      message: ev.error?.message ?? 'Codex turn failed',
       ts,
       originalItem: ev,
     });
@@ -371,9 +646,37 @@ function normalizeCodexEvent(event: any): CoderStreamEvent[] {
   normalized.push({
     type: 'progress',
     provider,
-    label: typeof type === 'string' ? type : 'codex.event',
+    label: type ?? 'codex.event',
     ts,
     originalItem: ev,
   });
   return normalized;
+}
+
+function linkSignal(signal: AbortSignal | undefined, onAbort: (reason?: string) => void): () => void {
+  if (!signal) return () => {};
+  const handler = () => onAbort(reasonToString(signal.reason));
+  signal.addEventListener('abort', handler, { once: true });
+  return () => signal.removeEventListener('abort', handler);
+}
+
+function createAbortError(reason?: string): Error {
+  const error = new Error(reason ?? 'Operation was interrupted');
+  error.name = 'AbortError';
+  (error as any).code = 'interrupted';
+  return error;
+}
+
+function deserializeError(serialized: SerializedError): Error {
+  const error = new Error(serialized.message);
+  if (serialized.stack) error.stack = serialized.stack;
+  if (serialized.name) error.name = serialized.name;
+  if (serialized.code) (error as any).code = serialized.code;
+  return error;
+}
+
+function reasonToString(reason: unknown): string | undefined {
+  if (typeof reason === 'string') return reason;
+  if (reason instanceof Error && reason.message) return reason.message;
+  return undefined;
 }
