@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.11.0] - 2025-11-09
+### ✨ Highlights
+- Worker-based Codex adapter now propagates structured output schemas, captures stderr on failures, and exposes deterministic cancellation/error events for `run` and `runStreamed`.
+- Claude adapter gains proper cooperative cancellation, session tracking, and stream interrupt events, plus a new integration test that verifies cancellation metadata.
+- Gemini adapter now mirrors the same cancellation semantics, streams close gracefully, and the interrupt/structured output tests cover the updated flows.
+- Added a full examples test suite (Codex, Claude, Gemini) that can run under five minutes with per-provider workspaces and environment overrides.
+- Publishing prep: adapters now list `@headless-coder-sdk/core` as a peer dependency, while core no longer depends on adapters, and `CHANGELOG.md` documents the release history.
+
+### 🧪 Testing & Tooling
+- Added interrupt tests for each provider plus structured-output coverage for Gemini and Codex.
+- Ensured examples/internal packages stay `"private": true` to prevent accidental publishes.
+- Introduced `before-interrupt` git tag and release tag flow (`v0.1.0`, `v0.11.0`).
+
+### ⚙️ Breaking Changes
+- None. Existing APIs remain compatible; only internal adapter behaviors improved.
+
 ## [0.1.0] - 2025-11-08
 ### 🎉 First Public Release
 
