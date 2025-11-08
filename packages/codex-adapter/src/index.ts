@@ -395,7 +395,9 @@ export class CodexAdapter implements HeadlessCoder {
         push(DONE);
         return;
       }
-      push(createWorkerExitError(`Codex worker exited with code ${code}`, stderrOutput));
+      const reason = `Codex worker exited with code ${code}`;
+      push(createCancelledEvent(reason, stderrOutput));
+      push(createWorkerExitErrorEvent(reason, stderrOutput));
       push(DONE);
     });
 
