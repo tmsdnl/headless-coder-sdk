@@ -1,6 +1,7 @@
 {
   "name": "@headless-coder-sdk/core",
-  "version": "0.1.0",
+  "version": "0.12.0",
+  "description": "Unified SDK for headless AI coders (Codex, Claude, Gemini) with standardized threading, streaming, and sandboxing.",
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -12,13 +13,33 @@
     "./factory": "./dist/factory.js",
     "./types": "./dist/types.js"
   },
-  "files": [
-    "dist"
-  ],
+  "files": ["dist", "src", "README.md", "LICENSE"  ],
+  "license": "MIT",
+  "publishConfig": { "access": "public" },
   "scripts": {
     "build": "tsc -p tsconfig.build.json"
   },
   "devDependencies": {
     "typescript": "^5.4.0"
-  }
+  },
+  "keywords": [
+    "ai",
+    "sdk",
+    "ai-coder",
+    "codex",
+    "claude",
+    "gemini",
+    "unified-api",
+    "headless",
+    "developer-tools",
+    "ai-agents"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/OhadAssulin/headless-coder-sdk.git"
+  },
+  "bugs": {
+    "url": "https://github.com/OhadAssulin/headless-coder-sdk/issues"
+  },
+  "homepage": "https://github.com/OhadAssulin/headless-coder-sdk#readme"
 }

@@ -7,6 +7,7 @@
 - Gemini adapter now mirrors the same cancellation semantics, streams close gracefully, and the interrupt/structured output tests cover the updated flows.
 - Added a full examples test suite (Codex, Claude, Gemini) that can run under five minutes with per-provider workspaces and environment overrides.
 - Publishing prep: adapters now list `@headless-coder-sdk/core` as a peer dependency, while core no longer depends on adapters, and `CHANGELOG.md` documents the release history.
+- Added a `packages/*/dist/` gitignore rule plus clean `npm run build --workspace <pkg>` outputs, making the core + adapters ready for npm/pnpm publication.
 
 ### 🧪 Testing & Tooling
 - Added interrupt tests for each provider plus structured-output coverage for Gemini and Codex.
