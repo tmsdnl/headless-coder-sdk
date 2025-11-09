@@ -11,7 +11,8 @@
   "scripts": {
     "build": "node ./scripts/run-workspaces.mjs build",
     "lint": "eslint .",
-    "test": "node ./scripts/run-workspaces.mjs test"
+    "test": "node ./scripts/run-workspaces.mjs test",
+    "acp:e2e": "node scripts/run-acp-e2e.mjs"
   },
   "devDependencies": {
     "@anthropic-ai/claude-agent-sdk": "^0.1.30",

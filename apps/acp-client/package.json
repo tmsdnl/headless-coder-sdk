@@ -1,0 +1,8 @@
+{
+  "name": "acp-client",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "tsx src/test.ts"
+  }
+}
