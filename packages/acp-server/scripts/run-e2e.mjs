@@ -8,6 +8,12 @@ const SERVER_PORT = process.env.ACP_PORT ?? '8000';
 const SERVER_URL = process.env.ACP_BASE_URL ?? `http://localhost:${SERVER_PORT}`;
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PACKAGE_ROOT = path.resolve(__dirname, '..');
+const WORKSPACE_DEPS = [
+  '@headless-coder-sdk/core',
+  '@headless-coder-sdk/codex-adapter',
+  '@headless-coder-sdk/claude-adapter',
+  '@headless-coder-sdk/gemini-adapter',
+];
 
 function log(...args) {
   console.log('[acp-e2e]', ...args);
@@ -20,6 +26,26 @@ function startServer() {
     stdio: 'inherit',
     env: { ...process.env, ACP_PORT: SERVER_PORT },
   });
+}
+
+async function runBuilds() {
+  for (const workspace of WORKSPACE_DEPS) {
+    log(`building ${workspace}...`);
+    await new Promise((resolve, reject) => {
+      const child = spawn(
+        'npm',
+        ['run', 'build', '--workspace', workspace],
+        {
+          stdio: 'inherit',
+        },
+      );
+      child.on('exit', code => {
+        if (code === 0) resolve();
+        else reject(new Error(`${workspace} build failed with code ${code}`));
+      });
+      child.on('error', reject);
+    });
+  }
 }
 
 async function waitForServer(timeoutMs = 30000) {
@@ -56,6 +82,7 @@ async function runClient() {
 }
 
 async function main() {
+  await runBuilds();
   const server = startServer();
   const cleanup = () => {
     if (!server.killed) {

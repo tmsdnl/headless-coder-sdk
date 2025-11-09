@@ -4,6 +4,7 @@
  */
 
 import { fork, ChildProcess } from 'node:child_process';
+import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { now } from '@headless-coder-sdk/core';
 import type {
@@ -19,7 +20,7 @@ import type {
   Provider,
 } from '@headless-coder-sdk/core';
 
-const WORKER_PATH = fileURLToPath(new URL('./worker.js', import.meta.url));
+const WORKER_PATH = path.join(path.dirname(fileURLToPath(import.meta.url)), 'worker.js');
 const SOFT_KILL_DELAY_MS = 250;
 const HARD_KILL_DELAY_MS = 1500;
 const DONE = Symbol('stream-done');
