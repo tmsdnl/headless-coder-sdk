@@ -1,6 +1,6 @@
 {
   "name": "@headless-coder-sdk/acp-server",
-  "private": true,
+  "version": "0.12.0",
   "type": "module",
   "scripts": {
     "dev": "next dev -p 8000",
@@ -19,5 +19,21 @@
     "@headless-coder-sdk/claude-adapter": "workspace:*",
     "@headless-coder-sdk/gemini-adapter": "workspace:*",
     "ajv": "^8.17.1"
+  },
+  "files": [
+    "app",
+    "client",
+    "next-env.d.ts",
+    "next.config.js",
+    "package.json",
+    "tsconfig.json",
+    "acp.config.json",
+    "acp.config.schema.json",
+    ".env.local.example",
+    "src",
+    "scripts"
+  ],
+  "publishConfig": {
+    "access": "public"
   }
 }

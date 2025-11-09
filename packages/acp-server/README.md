@@ -9,14 +9,14 @@ This Next.js 15 application exposes the Headless Coder SDK through the [Agent Co
 - Provider-specific credentials (Codex CLI, Claude agent, Gemini CLI) available to the underlying adapters
 
 ## Configuration
-1. Review `packages/headless-coder-acp-server/acp.config.json` to enable/disable adapters and adjust default model/working directory/sandbox options. The file is validated against `acp.config.schema.json` at runtime.
+1. Review `packages/acp-server/acp.config.json` to enable/disable adapters and adjust default model/working directory/sandbox options. The file is validated against `acp.config.schema.json` at runtime.
 2. Set `ACP_TOKEN` in `.env.local` (see `.env.local.example`) if you want the API to enforce authentication.
 
 ## Running the server
 From the monorepo root:
 ```bash
 # Start the ACP server on port 8000
-yarn workspace packages/headless-coder-acp-server dev   # or npm/pnpm equivalent
+yarn workspace packages/acp-server dev   # or npm/pnpm equivalent
 ```
 The API now serves:
 - `GET /api/acp/agents` – returns enabled agents
@@ -25,12 +25,12 @@ The API now serves:
 
 ## Building the server
 ```bash
-yarn workspace packages/headless-coder-acp-server build
+yarn workspace packages/acp-server build
 ```
-Then deploy with `yarn workspace packages/headless-coder-acp-server start` (or npm analog) pointing at the same configuration/credentials.
+Then deploy with `yarn workspace packages/acp-server start` (or npm analog) pointing at the same configuration/credentials.
 
 ## Example client
-A simple TypeScript client lives in `packages/headless-coder-acp-server/client`. It can be used as a template for your own integrations.
+A simple TypeScript client lives in `packages/acp-server/client`. It can be used as a template for your own integrations.
 
 ```bash
 # Run the ACP server first (see above)
