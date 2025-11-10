@@ -11,14 +11,35 @@ npm install @headless-coder-sdk/core @headless-coder-sdk/codex-adapter
 ## Usage
 
 ```ts
-import { registerAdapter, createCoder } from '@headless-coder-sdk/core';
-import { CODER_NAME as CODEX, createAdapter } from '@headless-coder-sdk/codex-adapter';
+import { createHeadlessCodex } from '@headless-coder-sdk/codex-adapter';
 
-registerAdapter(CODEX, createAdapter);
-const coder = createCoder(CODEX, { workingDirectory: process.cwd() });
+if (typeof window !== 'undefined') {
+  throw new Error('Codex adapter is server-only');
+}
+
+const coder = createHeadlessCodex({ workingDirectory: process.cwd() });
 const thread = await coder.startThread();
 const turn = await thread.run('Write unit tests for the git helper.');
 console.log(turn.text);
+```
+
+`createHeadlessCodex` registers the adapter (if necessary) and returns a coder in one call so you no longer have to wire up `registerAdapter` manually.
+
+## Next.js / server frameworks
+
+The adapter forks worker processes via Node’s `child_process`, so keep it on the server:
+
+```ts
+export async function POST() {
+  if (typeof window !== 'undefined') {
+    throw new Error('Codex adapter must run on the server');
+  }
+  const { createHeadlessCodex } = await import('@headless-coder-sdk/codex-adapter');
+  const coder = createHeadlessCodex({ workingDirectory: process.cwd() });
+  const thread = await coder.startThread();
+  const result = await thread.run('List open pull requests');
+  return Response.json({ text: result.text });
+}
 ```
 
 ## Worker placement

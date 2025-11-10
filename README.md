@@ -38,12 +38,9 @@ npm i @headless-coder-sdk/core @headless-coder-sdk/codex-adapter
 ```
 
 ```ts
-import { registerAdapter, createCoder } from '@headless-coder-sdk/core';
-import { CODER_NAME as CODEX, createAdapter as createCodex } from '@headless-coder-sdk/codex-adapter';
+import { createHeadlessCodex } from '@headless-coder-sdk/codex-adapter';
 
-registerAdapter(CODEX, createCodex);
-
-const coder = createCoder(CODEX);
+const coder = createHeadlessCodex({ workingDirectory: process.cwd() });
 const thread = await coder.startThread();
 const result = await thread.run('Write a hello world script');
 console.log(result.text);
@@ -239,6 +236,38 @@ In this workflow two reviewers (Claude, Codex) analyze the same commit in parall
 
 ---
 
+## ⚠️ Codex Adapter Runtime
+
+- The Codex adapter forks worker processes via Node’s `child_process` API and **must run on the server**. It is safe to import in build tooling, but gate runtime usage to environments where `process.versions.node` exists.
+- A convenience helper, `createHeadlessCodex`, registers the adapter and returns a coder in one call:
+
+  ```ts
+  import { createHeadlessCodex } from '@headless-coder-sdk/codex-adapter';
+
+  if (typeof window !== 'undefined') {
+    throw new Error('Codex adapter is server-only');
+  }
+
+  const codex = createHeadlessCodex({ workingDirectory: process.cwd() });
+  ```
+
+- In frameworks like Next.js, lazy-load the helper inside server components or API routes to avoid bundling it client-side:
+
+  ```ts
+  export async function POST() {
+    if (typeof window !== 'undefined') {
+      throw new Error('Codex must run on the server');
+    }
+    const { createHeadlessCodex } = await import('@headless-coder-sdk/codex-adapter');
+    const coder = createHeadlessCodex({ workingDirectory: process.cwd() });
+    const thread = await coder.startThread();
+    const result = await thread.run('List recent commits');
+    return Response.json({ text: result.text });
+  }
+  ```
+
+---
+
 ## ⚙️ Development
 
 **Install**
@@ -299,6 +328,7 @@ Open an [issue](https://github.com/OhadAssulin/headless-coder-sdk/issues) or sub
 ## 📦 Distribution Notes
 
 - Every workspace now emits flattened entry points at `dist/*.js` (ESM) and `dist/*.cjs` (CommonJS), with `.d.ts` files sitting beside them for better editor support.
+- You can import `createCoder` or helper utilities directly from `@headless-coder-sdk/core` and `@headless-coder-sdk/codex-adapter` without deep `dist/*/src` paths—the `main`/`module` fields now point at those root files.
 - `package.json` is exposed via the exports map (`import '@headless-coder-sdk/core/package.json'`) for tooling that needs to inspect versions at runtime.
 - `@headless-coder-sdk/codex-adapter` forks a worker via `fileURLToPath(new URL('./worker.js', import.meta.url))`; keep `dist/worker.js` adjacent when rebundling so that child processes can spawn correctly.
 

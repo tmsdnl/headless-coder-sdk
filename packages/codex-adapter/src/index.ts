@@ -5,8 +5,13 @@
 
 import { fork, ChildProcess } from 'node:child_process';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
-import { now } from '@headless-coder-sdk/core';
+import { fileURLToPath, pathToFileURL } from 'node:url';
+import {
+  now,
+  registerAdapter,
+  getAdapterFactory,
+  createCoder,
+} from '@headless-coder-sdk/core';
 import type {
   AdapterFactory,
   HeadlessCoder,
@@ -20,18 +25,37 @@ import type {
   Provider,
 } from '@headless-coder-sdk/core';
 
-const moduleFilename = typeof __filename === 'string' ? __filename : fileURLToPath(import.meta.url);
-const WORKER_PATH = path.join(path.dirname(moduleFilename), 'worker.js');
+const moduleUrl =
+  typeof __filename === 'string' ? pathToFileURL(__filename).href : import.meta.url;
+const workerUrl = new URL('./worker.js', moduleUrl);
+const WORKER_PATH = fileURLToPath(workerUrl);
 const SOFT_KILL_DELAY_MS = 250;
 const HARD_KILL_DELAY_MS = 1500;
 const DONE = Symbol('stream-done');
 const STDERR_BUFFER_LIMIT = 64 * 1024;
+const isNodeRuntime = typeof process !== 'undefined' && !!process.versions?.node;
+
+function ensureNodeRuntime(action: string): void {
+  if (!isNodeRuntime) {
+    throw new Error(
+      `@headless-coder-sdk/codex-adapter can only ${action} inside a Node.js runtime.`,
+    );
+  }
+}
 
 export const CODER_NAME: Provider = 'codex';
 export function createAdapter(defaults?: StartOpts): HeadlessCoder {
   return new CodexAdapter(defaults);
 }
 (createAdapter as AdapterFactory).coderName = CODER_NAME;
+
+export function createHeadlessCodex(defaults?: StartOpts): HeadlessCoder {
+  if (!getAdapterFactory(CODER_NAME)) {
+    registerAdapter(createAdapter as AdapterFactory);
+  }
+  ensureNodeRuntime('create a Codex coder');
+  return createCoder(CODER_NAME, defaults);
+}
 
 interface CodexThreadOptions {
   model?: string;
@@ -174,6 +198,7 @@ export class CodexAdapter implements HeadlessCoder {
   }
 
   private launchRunWorker(state: CodexThreadState, input: string, opts?: RunOpts) {
+    ensureNodeRuntime('spawn a Codex worker');
     const child = fork(WORKER_PATH, { stdio: ['inherit', 'inherit', 'pipe', 'ipc'] });
     const stderr = collectChildStderr(child);
     const abortController = new AbortController();
@@ -278,6 +303,7 @@ export class CodexAdapter implements HeadlessCoder {
     input: string,
     opts?: RunOpts,
   ): EventIterator {
+    ensureNodeRuntime('stream Codex events');
     const child = fork(WORKER_PATH, { stdio: ['inherit', 'inherit', 'pipe', 'ipc'] });
     const stderr = collectChildStderr(child);
     const abortController = new AbortController();
