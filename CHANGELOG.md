@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.17.0] - 2025-11-10
+### 🧱 Dependency Cleanup
+- Removed the temporary dependency from `@headless-coder-sdk/core` → Gemini adapter to keep the core package lightweight again.
+- All adapters now declare a peer dependency on `@headless-coder-sdk/core@^0.17.0` so consumers upgrade in lockstep.
+
+### 📦 Publishing
+- Bumped `@headless-coder-sdk/core` and `@headless-coder-sdk/gemini-adapter` to `0.17.0` for npm release, keeping changelog/README references in sync.
+
 ## [0.16.0] - 2025-11-10
 ### ✨ Gemini Tool Mapping
 - Gemini adapter now emits richer `tool_use`/`tool_result` frames (name/callId/args/output/exitCode/error) so downstream ACP clients and SDK consumers can rely on structured metadata without inspecting `originalItem`.

@@ -19,7 +19,7 @@
   },
   "peerDependencies": {
     "@anthropic-ai/claude-agent-sdk": "*",
-    "@headless-coder-sdk/core": "^0.15.0"
+    "@headless-coder-sdk/core": "^0.17.0"
   },
   "devDependencies": {
     "typescript": "^5.4.0",

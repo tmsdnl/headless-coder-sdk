@@ -27,7 +27,7 @@
     "build": "tsup --config tsup.config.ts"
   },
   "peerDependencies": {
-    "@headless-coder-sdk/core": "^0.15.0",
+    "@headless-coder-sdk/core": "^0.17.0",
     "@openai/codex-sdk": "^0.57.0"
   },
   "devDependencies": {
