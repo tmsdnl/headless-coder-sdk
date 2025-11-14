@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.18.0] - 2025-11-14
+### 🚀 Codex & Model Updates
+- Codex adapter is now built against `@openai/codex-sdk@0.58.0`, unlocking GPT-5.1 Codex and GPT-5.1 Modals support out of the box.
+
+### 📦 Packaging
+- Bumped `@headless-coder-sdk/core`, Codex, Claude, and Gemini adapters to `0.18.0`, updating every adapter peer dependency to `@headless-coder-sdk/core@^0.18.0`.
+- Root README no longer includes the CI badge and is copied directly into the core package so npm consumers see the refreshed docs.
+
 ## [0.17.0] - 2025-11-10
 ### 🧱 Dependency Cleanup
 - Removed the temporary dependency from `@headless-coder-sdk/core` → Gemini adapter to keep the core package lightweight again.
