@@ -1,4 +1,4 @@
-import type { Provider, StartOpts } from '@headless-coder-sdk/core';
+import type { Provider, StartOpts } from '@headless-coder-sdk/core/types';
 
 export type ProviderId = Extract<Provider, 'codex' | 'claude' | 'gemini'>;
 

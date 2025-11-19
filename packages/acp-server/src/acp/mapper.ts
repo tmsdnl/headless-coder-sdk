@@ -1,9 +1,12 @@
-import type { AcpStreamFrame } from '@i-am-bee/acp-sdk';
-import type { CoderStreamEvent } from '@headless-coder-sdk/core';
+import type { CoderStreamEvent } from '@headless-coder-sdk/core/types';
+
+type AcpStreamFrame = Record<string, unknown> & { type: string; provider?: string; ts?: number };
 
 const frame = (payload: Record<string, unknown>): AcpStreamFrame => payload as AcpStreamFrame;
 
-export function mapEventToFrames(event: CoderStreamEvent): AcpStreamFrame[] {
+type UnknownEvent = CoderStreamEvent | (Record<string, unknown> & { type?: string; provider?: string; ts?: number });
+
+export function mapEventToFrames(event: UnknownEvent): AcpStreamFrame[] {
   switch (event.type) {
     case 'message':
       return [

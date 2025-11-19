@@ -3,7 +3,7 @@ export const dynamic = 'force-dynamic';
 
 import type { NextRequest } from 'next/server';
 import { createCoder } from '@headless-coder-sdk/core';
-import type { PromptInput } from '@headless-coder-sdk/core';
+import type { PromptInput } from '@headless-coder-sdk/core/types';
 import { loadConfig } from '@/acp/config';
 import { ensureAdaptersRegistered } from '@/acp/registry';
 import { sessions } from '@/acp/store';

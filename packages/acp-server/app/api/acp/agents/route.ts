@@ -3,10 +3,20 @@ export const dynamic = 'force-dynamic';
 
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
-import type { AcpAgent } from '@i-am-bee/acp-sdk';
 import { loadConfig } from '@/acp/config';
 import { ensureAdaptersRegistered } from '@/acp/registry';
 import { verifyRequestAuth } from '@/acp/auth';
+
+type AcpAgent = {
+  id: string;
+  name: string;
+  description?: string;
+  capabilities: {
+    streaming: boolean;
+    structuredOutput: boolean;
+    sandboxModes: Array<'read-only' | 'workspace-write' | 'danger-full-access'>;
+  };
+};
 
 export async function GET(request: NextRequest) {
   const authError = verifyRequestAuth(request);

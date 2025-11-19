@@ -2,12 +2,13 @@ import { registerAdapter } from '@headless-coder-sdk/core/factory';
 import { createAdapter as createCodex } from '@headless-coder-sdk/codex-adapter';
 import { createAdapter as createClaude } from '@headless-coder-sdk/claude-adapter';
 import { createAdapter as createGemini } from '@headless-coder-sdk/gemini-adapter';
+import type { AdapterFactory } from '@headless-coder-sdk/core/types';
 import type { AcpConfig, ProviderId } from './types';
 
-const factories: Record<ProviderId, typeof createCodex> = {
-  codex: createCodex,
-  claude: createClaude,
-  gemini: createGemini,
+const factories: Record<ProviderId, AdapterFactory> = {
+  codex: createCodex as AdapterFactory,
+  claude: createClaude as AdapterFactory,
+  gemini: createGemini as AdapterFactory,
 };
 
 const registered = new Set<ProviderId>();

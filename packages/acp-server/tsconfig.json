@@ -18,6 +18,24 @@
     "paths": {
       "@/*": [
         "./src/*"
+      ],
+      "@headless-coder-sdk/core": [
+        "../core/dist/index.js"
+      ],
+      "@headless-coder-sdk/core/*": [
+        "../core/dist/*"
+      ],
+      "@headless-coder-sdk/core/factory": [
+        "../core/dist/factory.js"
+      ],
+      "@headless-coder-sdk/codex-adapter": [
+        "../codex-adapter/dist/index.js"
+      ],
+      "@headless-coder-sdk/claude-adapter": [
+        "../claude-adapter/dist/index.js"
+      ],
+      "@headless-coder-sdk/gemini-adapter": [
+        "../gemini-adapter/dist/index.js"
       ]
     },
     "incremental": true,
