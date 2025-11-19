@@ -83,6 +83,21 @@ function applyOutputSchemaPrompt(input: PromptInput, schema?: object): PromptInp
   ];
 }
 
+function shouldUseNativeStructuredOutput(schema?: object): boolean {
+  return !!schema;
+}
+
+function extractNativeStructuredOutput(result: any): unknown | undefined {
+  if (!result) return undefined;
+  if (Object.prototype.hasOwnProperty.call(result, 'structured_output')) {
+    return (result as any).structured_output;
+  }
+  if (Object.prototype.hasOwnProperty.call(result, 'structuredOutput')) {
+    return (result as any).structuredOutput;
+  }
+  return undefined;
+}
+
 function extractJsonPayload(text: string | undefined): unknown | undefined {
   if (!text) return undefined;
   const fenced = text.match(/```json\s*([\s\S]+?)```/i);
@@ -176,11 +191,18 @@ export class ClaudeAdapter implements HeadlessCoder {
    * Returns:
    *   Options ready for the Claude Agent SDK.
    */
-  private buildOptions(state: ClaudeThreadState, runOpts?: RunOpts): Options {
+  private buildOptions(state: ClaudeThreadState, runOpts?: RunOpts, useNativeStructuredOutput?: boolean): Options {
     const startOpts = state.opts ?? {};
     const resumeId = state.resume ? state.sessionId : undefined;
     const permissionMode: PermissionMode | undefined =
       (startOpts.permissionMode as PermissionMode | undefined) ?? (startOpts.yolo ? 'bypassPermissions' : undefined);
+    const outputFormat =
+      useNativeStructuredOutput && runOpts?.outputSchema
+        ? {
+            type: 'json_schema' as const,
+            schema: runOpts.outputSchema as Record<string, unknown>,
+          }
+        : undefined;
     return {
       cwd: startOpts.workingDirectory,
       allowedTools: startOpts.allowedTools,
@@ -192,6 +214,7 @@ export class ClaudeAdapter implements HeadlessCoder {
       model: startOpts.model,
       permissionMode,
       permissionPromptToolName: startOpts.permissionPromptToolName,
+      outputFormat,
     };
   }
 
@@ -213,9 +236,10 @@ export class ClaudeAdapter implements HeadlessCoder {
     ensureNodeRuntime('run Claude');
     const state = thread.internal as ClaudeThreadState;
     this.assertIdle(state);
-    const structuredPrompt = applyOutputSchemaPrompt(toPrompt(input), runOpts?.outputSchema);
-    const prompt = toPrompt(structuredPrompt);
-    const options = this.buildOptions(state, runOpts);
+    const useNativeStructuredOutput = shouldUseNativeStructuredOutput(runOpts?.outputSchema);
+    const promptInput = useNativeStructuredOutput ? input : applyOutputSchemaPrompt(input, runOpts?.outputSchema);
+    const prompt = toPrompt(promptInput);
+    const options = this.buildOptions(state, runOpts, useNativeStructuredOutput);
     const generator = query({ prompt, options });
     const active = this.registerRun(state, generator, runOpts?.signal);
     let lastAssistant = '';
@@ -255,7 +279,9 @@ export class ClaudeAdapter implements HeadlessCoder {
     if (finalResult && claudeResultIndicatesError(finalResult)) {
       throw new Error(buildClaudeResultErrorMessage(finalResult));
     }
-    const structured = runOpts?.outputSchema ? extractJsonPayload(lastAssistant) : undefined;
+    const structured = runOpts?.outputSchema
+      ? extractNativeStructuredOutput(finalResult) ?? extractJsonPayload(lastAssistant)
+      : undefined;
     return { threadId: state.sessionId, text: lastAssistant, raw: finalResult, json: structured };
   }
 
@@ -281,9 +307,10 @@ export class ClaudeAdapter implements HeadlessCoder {
     ensureNodeRuntime('stream Claude events');
     const state = thread.internal as ClaudeThreadState;
     this.assertIdle(state);
-    const structuredPrompt = applyOutputSchemaPrompt(toPrompt(input), runOpts?.outputSchema);
-    const prompt = toPrompt(structuredPrompt);
-    const options = this.buildOptions(state, runOpts);
+    const useNativeStructuredOutput = shouldUseNativeStructuredOutput(runOpts?.outputSchema);
+    const promptInput = useNativeStructuredOutput ? input : applyOutputSchemaPrompt(input, runOpts?.outputSchema);
+    const prompt = toPrompt(promptInput);
+    const options = this.buildOptions(state, runOpts, useNativeStructuredOutput);
     const generator = query({ prompt, options });
     const adapter = this;
 
