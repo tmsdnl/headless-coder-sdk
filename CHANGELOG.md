@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.20.0] - 2025-11-19
+### ♻️ Gemini Resume Support
+- `@headless-coder-sdk/gemini-adapter` now captures CLI session ids/indexes and forwards `--resume` for every subsequent run, so both repeated thread runs and explicit `resumeThread()` flows continue the same workspace.
+- Added `examples/src/gemini-resume.test.ts` to cover back-to-back runs and the resumeThread path, skipping automatically when the Gemini CLI is unavailable.
+
+### 📚 Documentation & Versioning
+- README now documents that Gemini sessions are resumable, and the updated content is mirrored to the core package README.
+- Bumped every package to `0.20.0` to release the Gemini resume support and documentation updates.
+
 ## [0.19.0] - 2025-11-19
 ### ✨ Claude Native Structured Outputs
 - `@headless-coder-sdk/claude-adapter` now relies entirely on Claude Agent SDK's native `structured_output`, removing the legacy prompt-based JSON parsing fallback so schemas are enforced by Claude itself.

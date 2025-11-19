@@ -112,7 +112,7 @@ const turn = await thread.run('Summarise the repo in JSON', {
 console.log(turn.json);
 ```
 
-> ⚠️ Gemini CLI resume support is pending upstream ([PR #10719](https://github.com/google-gemini/gemini-cli/pull/10719)).
+Gemini sessions are resumable—reuse the same thread handle for follow-up runs or call `resumeThread()` with a stored `threadId` to keep the CLI conversation active.
 
 ---
 
